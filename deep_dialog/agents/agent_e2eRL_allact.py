@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 '''
+end2end agent' implementation
 '''
 
 import numpy as np
@@ -33,6 +34,31 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
             train=True, _reload=False, n_hid=100, batch=128, ment=0., inputtype='full', upd=10, 
             sl='e2e', rl='e2e', pol_start=600, lr=0.005, N=1, tr=2.0, ts=0.5, max_req=2, frac=0.5, 
             name=None):
+        '''
+        构造end2end的Agent
+        :param movie_dict:
+        :param act_set:
+        :param slot_set:
+        :param db:
+        :param corpus:
+        :param train: train or evaluate
+        :param _reload: ??
+        :param n_hid: ?
+        :param batch: batch size
+        :param ment: ??
+        :param inputtype: 确定policy network的特征输入模式，可以是entropy或者full,entropy更特征更少
+        :param upd:
+        :param sl: e2e
+        :param rl: e2e
+        :param pol_start: ??
+        :param lr:learning rate, 0.05
+        :param N: featN, 2 ??
+        :param tr: ??
+        :param ts: ??
+        :param max_req: ??
+        :param frac: ??
+        :param name:
+        '''
         self.movie_dict = movie_dict
         self.act_set = act_set
         self.slot_set = slot_set
@@ -127,8 +153,13 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
                 for s in dialog_config.inform_slots]
         self.state['pol_state'] = np.zeros((1,self.n_hid)).astype('float32')
 
-    ''' get next action based on rules '''
     def next(self, user_action, verbose=False):
+        '''
+        get next action based on rules
+        :param user_action:
+        :param verbose: 是否打印模型运行过程产生的log
+        :return: 产生后续的对话状态
+        '''
         self.state['turn'] += 1
 
         p_vector = np.zeros((self.in_size,)).astype('float32')

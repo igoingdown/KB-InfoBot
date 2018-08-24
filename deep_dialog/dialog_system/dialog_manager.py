@@ -1,5 +1,10 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 '''
+控制对话流程
 '''
+
 import random, time
 from . import MovieDict, Database
 from deep_dialog import dialog_config
@@ -7,6 +12,15 @@ from deep_dialog import dialog_config
 
 class DialogManager:
     def __init__(self, agent, user, db_full, db_inc, movie_kb, verbose=True):
+        '''
+        初始化Dialog Manager
+        :param agent: agent model
+        :param user: user 或者 user simulator
+        :param db_full: 无missing value的database(table)
+        :param db_inc: 强行加入20% missing value的database(table)
+        :param movie_kb: knowledge base
+        :param verbose: 决定是否打印程序运行过程中产生的冗余信息，话痨模式和哑巴模式
+        '''
         self.agent = agent
         self.user = user
         self.user_action = None
@@ -62,6 +76,10 @@ class DialogManager:
         return (episode_over, reward, self.user_action, self.sys_actions)
 
     def check_db(self):
+        '''
+
+        :return:
+        '''
         db_query = []
         for s in self.database.slots:
             if s in self.sys_actions['inform_slots']:
@@ -77,6 +95,10 @@ class DialogManager:
             return False
 
     def _check_user_goal(self):
+        '''
+
+        :return:
+        '''
         db_query = []
         for s in self.database.slots:
             if s in self.user.goal['inform_slots']:

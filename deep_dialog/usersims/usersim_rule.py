@@ -1,5 +1,7 @@
-'''
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
+'''
 a rule-based user simulator
 
 '''
@@ -21,7 +23,7 @@ def weighted_choice(choices, weights):
         if upto + w >= r:
             return c
         upto += w
-    assert False, "shouldnt get here"
+    assert False, "shouldn't get here"
 
 class RuleSimulator:
     def __init__(self, movie_dict=None, act_set=None, slot_set=None, 
@@ -39,10 +41,12 @@ class RuleSimulator:
         self.sub_prob = sub_prob
         self.max_first_turn = max_first_turn
 
-    ''' randomly sample a start state '''
     def _sample_action(self):
+        '''
+        randomly sample a start state
+        :return: 当前episode是否结束标志，对话状态
+        '''
         self.state = {}
-        
         self.state['diaact'] = random.choice(dialog_config.start_dia_acts.keys())
         self.state['turn'] = 0
         self.state['inform_slots'] = {}
@@ -76,8 +80,11 @@ class RuleSimulator:
         raise Exception("hello world")
         return episode_over, self.state
 
-    ''' sample a goal '''
     def _sample_goal(self):
+        '''
+        sample a goal
+        :return:
+        '''
         if self.start_set is not None:
             self.goal = random.choice(self.start_set)  # sample user's goal from the dataset
         else:
@@ -109,6 +116,10 @@ class RuleSimulator:
         # raise Exception("hello world")
 
     def print_goal(self):
+        '''
+        打印用户的goal
+        :return:
+        '''
         print 'User target = ', ', '.join(['%s:%s' %(s,v) for s,v in \
                 zip(['movie']+self.database.slots, \
                 [self.database.labels[self.goal['target']]] + \
@@ -116,8 +127,11 @@ class RuleSimulator:
         print 'User information = ', ', '.join(['%s:%s' %(s,v) for s,v in \
                 self.goal['inform_slots'].iteritems() if v is not None]), '\n'
 
-    ''' initialization '''
     def initialize_episode(self):
+        '''
+        initialization，先采样一条记录用户期待的答案，然后随机采样生成用户的初始输入(action)
+        :return: 返回用户开始的action
+        '''
         self._sample_goal()
         
         # first action
@@ -125,8 +139,12 @@ class RuleSimulator:
         assert (episode_over != 1),' but we just started'
         return user_action
 
-    ''' update state: state is sys_action '''
     def next(self, state):
+        '''
+        用户根据系统状态决定什么样的输入，输入之后修改对话状态
+        :param state: sys_action
+        :return: 新的对话状态，即用户对话状态
+        '''
         self.state['turn'] += 1
         reward = 0
         episode_over = False
@@ -171,8 +189,11 @@ class RuleSimulator:
 
         return self.state, episode_over, reward
 
-    ''' user may make mistakes '''
     def corrupt(self):
+        '''
+        用户可能会犯浑！用户的记忆是不牢靠的，以一定概率修改用户的先验知识
+        :return:
+        '''
         self.state['inform_slots_noisy'] = {}
         for slot in self.state['inform_slots'].keys():
             if self.state['inform_slots'][slot]==None:
@@ -216,8 +237,12 @@ class RuleSimulator:
                 out.append(t)
         return ' '.join([o for o in out])
 
-    ''' user state representation '''
     def stateVector(self, action):
+        '''
+        user state representation
+        :param action:
+        :return:
+        '''
         vec = [0]*(len(self.act_set.dict) + len(self.slot_set.slot_ids)*2)
 
         if action['diaact'] in self.act_set.dict.keys(): vec[self.act_set.dict[action['diaact']]] = 1
@@ -228,8 +253,12 @@ class RuleSimulator:
 
         return vec
 
-    ''' print the state '''
     def print_state(self, action):
+        '''
+        print the state
+        :param action: 用户采取的action，即用户输入
+        :return:
+        '''
         stateStr = 'Turn %d user action: %s, history slots: %s, inform_slots: %s, request slots: %s, rest_slots: %s' % (action['turn'], action['diaact'], action['history_slots'], action['inform_slots'], action['request_slots'], action['rest_slots'])
         print stateStr
 

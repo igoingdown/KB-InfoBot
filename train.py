@@ -93,20 +93,25 @@ act_set.load_dict_from_file(params['act_set'])
 # moviename actor critic_rating genre mpaa_rating release_year director
 slot_set = SlotReader(slot_path)
 
+# TODO: 读取dict_path为每个slot构建不同的dict，方面后续的计算
 # dict_path中保存的是数据集上每个槽到槽中值的list的映射，是一个2进制文件，必须通过2进制读取
 movie_kb = MovieDict(dict_path)
-# movie_kb实际包含了数据集上每个槽到槽中值的set的映射、每个槽到槽中值set长度的映射
+# movie_kb实际包含了数据集上每个槽到槽中值的set的映射、每个槽到槽中值set长度(Missing Value ID)的映射
 # 以及每个slot下不同的token(不含停止词的单词)到槽值的index的映射
 
-# TODO：全db和按比例缺失db
+# 分别构造全db和按比例缺失db
 db_full = Database(db_full_path, movie_kb, name=params['dataset'])
 db_inc = Database(db_inc_path, movie_kb, name='incomplete%.2f_'%params['unk']+params['dataset'])
 
+# 构造生成自然语言回复的模型
 nlg = S2SNLG(template_path, params['nlg_slots_path'], params['nlg_model_path'], 
         params['nlg_temp'])
+
+# 构造用户模拟器
 user_sim = RuleSimulator(movie_kb, act_set, slot_set, None, max_turn, nlg, err_prob, db_full, \
         1.-dk_prob, sub_prob=params['sub_prob'], max_first_turn=params['max_first_turn'])
 
+# 根据参数agent_type构建用于训练的agent和用于evaluate的agent
 if agent_type == 'simple-rl-soft':
     agent = AgentSimpleRLAllAct(movie_kb, act_set, slot_set, db_inc, _reload=_reload,
             n_hid=params['nhid'],
@@ -171,6 +176,13 @@ dialog_manager_eval = DialogManager(agent_eval, user_sim, db_full, db_inc, movie
         verbose=False)
 
 def eval_agent(ite, max_perf, best=False):
+    '''
+    自动进行2000次对话评估agent的指标主要评估的是每次对话的平均reward
+    :param ite: batch_size * 100 * N
+    :param max_perf: 历史最高的测试数据reward平均值
+    :param best: 区分load训练完的最好模型，还是load当前训练到某一轮的模型
+    :return: max_perf，新的最高的测试数据reward平均值
+    '''
     num_iter = 2000
     nn = np.sqrt(num_iter)
     if best: agent_eval.load_model(dialog_config.MODEL_PATH+'best_'+agent_eval._name)

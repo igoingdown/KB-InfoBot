@@ -1,5 +1,7 @@
-'''
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
+'''
 Takes user action and produces NL utterance using Xiujun's NLG
 Backs off to template nlg
 '''
