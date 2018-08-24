@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 '''
 '''
 
@@ -117,6 +119,9 @@ class E2ERLAgent:
             l_rnn = L.GRULayer(l_in, self.r_hid, hid_init=hid_in,  \
                     mask_input=l_mask_in,
                     grad_clipping=10.) # B x H x D
+            #TODO: H、D分别表示什么？
+            # 对于不同的Variable，D不同，对于p，D就是当前slot的unique值的个数。对于q，D = 1， 对于P_T, D = N。
+            # H是否为history？表示对话的context信息，即本次对话之前的对话轮次。
             l_b_in = L.ReshapeLayer(l_rnn, 
                     (input_var.shape[0]*input_var.shape[1], self.r_hid)) # BH x D
             hid_out = L.get_output(l_rnn)[:,-1,:]
@@ -134,6 +139,7 @@ class E2ERLAgent:
 
             phi = T.clip(L.get_output(l_phi), 0.01, 0.99)
             p = L.get_output(l_b)
+            # phi就是论文中的q，b就是论文中的q!
             p_u = _add_unk(p, m_unk[i], db.N)
             kl_loss.append(T.sum(flat_mask.flatten()*kl_divergence(p, p_t))/T.sum(flat_mask))
             x_loss.append(T.sum(flat_mask*lasagne.objectives.binary_crossentropy(phi,phi_t))/
@@ -174,6 +180,7 @@ class E2ERLAgent:
         p_db = check_db(pu_vars, phi_vars, T_var, N_var) # BH x T.shape[0]
         
         if inputtype=='entropy':
+            # TODO: 计算H，对特征进行降维
             H_vars = [weighted_entropy(pv,p_db,prior[i],unknown[i],ids[i]) \
                     for i,pv in enumerate(p_vars)]
             H_db = entropy(p_db)
@@ -185,6 +192,7 @@ class E2ERLAgent:
                     shape=(None,None,2*len(dialog_config.inform_slots)+1), \
                     input_var=t_in_resh)
         else:
+            # TODO: 不对特征进行降维，特征维度非常高，参数量极大！
             in_reshaped = T.reshape(input_var, 
                     (input_var.shape[0]*input_var.shape[1], \
                     input_var.shape[2]))
@@ -193,6 +201,8 @@ class E2ERLAgent:
                     axis=1) # BH x D-sum+A
             t_in_resh = T.reshape(t_in, (turn_mask.shape[0], turn_mask.shape[1], \
                     t_in.shape[1])) # B x H x D-sum
+            # D-sum = sum(V_j) + M + N
+            # 对于不同的Variable，D不同，对于p，D就是当前slot的unique值的个数。对于q，D = 1， 对于P_T,D = N。
             l_in_pol = L.InputLayer(shape=(None,None,sum(self.slot_sizes)+ \
                     3*len(dialog_config.inform_slots)+ \
                     table.shape[0]), input_var=t_in_resh)
@@ -206,6 +216,7 @@ class E2ERLAgent:
                 (turn_mask.shape[0]*turn_mask.shape[1], n_hid)) # BH x D
         l_out = L.DenseLayer(l_den_in, self.out_size, \
                 nonlinearity=lasagne.nonlinearities.softmax) # BH x A
+        # A 表示Action size！
 
         self.network = l_out
         self.pol_params = L.get_all_params(self.network)

@@ -1,3 +1,7 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+
 '''
 
 '''
@@ -28,7 +32,9 @@ class MovieDict:
     def _build_token_index(self):
         self.tokens = {}
         for slot,vals in self.dict.iteritems():
+            print "db slot: {}\nslot values: {}".format(slot, vals)
             self.tokens[slot] = defaultdict(list)
             for vi,vv in enumerate(vals):
                 w_v = to_tokens(vv)
+                print "slot value: ", vv, ", tokens: ", w_v
                 for w in w_v: self.tokens[slot][w].append(vi)

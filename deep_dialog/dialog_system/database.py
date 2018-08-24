@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 '''
 
 Class for database
@@ -26,6 +29,11 @@ class Database:
         self._prepare_for_search()
 
     def _load_db(self, path):
+        '''
+        读取电影数据集，保存slots(除电影名之外的6种属性)、labels(每部电影的电影名列表)和tuples(每部电影的其余6种属性的列表)
+        :param path: 数据集的path
+        :return: None
+        '''
         try:
             fi = io.open(path,'r')
             self.slots = fi.readline().rstrip().split('\t')[1:]
@@ -81,10 +89,14 @@ class Database:
             self.inv_index[slot] = defaultdict(list)
             self.inv_counts[slot] = np.zeros((V+1,)).astype('float32')
             values = [t[i] for t in self.tuples]
+            # 每条记录的第i个slot值列表
+            print "dicts.dict[slot]: {}".format(dicts.dict[slot])
             for j,v in enumerate(values):
                 v_id = dicts.dict[slot].index(v) if v!='UNK' else V
+                # print "v: {}, dicts.dict[slot].index(v): {}".format(v, v_id)
                 self.inv_index[slot][v].append(j)
                 self.inv_counts[slot][v_id] += 1
+        # raise Exception("hello world")
 
     def _build_table(self, dicts):
         self.table = np.zeros((len(self.tuples),len(self.slots))).astype('int16')

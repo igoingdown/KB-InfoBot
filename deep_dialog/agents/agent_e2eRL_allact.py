@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 '''
 '''
 
@@ -40,6 +43,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         out_size = len(dialog_config.inform_slots)+1
         in_size = len(self.feat_extractor.grams) + len(dialog_config.inform_slots)
         slot_sizes = [self.movie_dict.lengths[s] for s in dialog_config.inform_slots]
+        print "slot_sizes: {}".format(slot_sizes)
         self._init_model(in_size, out_size, slot_sizes, self.database, \
                 n_hid=n_hid, learning_rate_sl=lr, batch_size=batch, ment=ment, inputtype=inputtype, \
                 sl=sl, rl=rl)

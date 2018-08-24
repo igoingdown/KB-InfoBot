@@ -72,7 +72,8 @@ class RuleSimulator:
         self.state['nl_sentence'] = sent
         self.state['episode_over'] = episode_over
         self.state['reward'] = 0
-
+        print "user state:\n{}".format(self.state)
+        raise Exception("hello world")
         return episode_over, self.state
 
     ''' sample a goal '''
@@ -104,6 +105,8 @@ class RuleSimulator:
                     if val!='UNK':
                         self.goal['inform_slots'][s] = val
                         break
+        # print "user goal:\n{}".format(self.goal)
+        # raise Exception("hello world")
 
     def print_goal(self):
         print 'User target = ', ', '.join(['%s:%s' %(s,v) for s,v in \

@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import argparse, json, shutil, time, sys
 import numpy as np
 import importlib
@@ -43,10 +46,12 @@ args = parser.parse_args()
 params = vars(args)
 
 params['act_set'] = './data/dia_acts.txt'
+#
 params['template_path'] = './data/templates.p'
 params['nlg_slots_path'] = './data/nlg_slot_set.txt'
 params['nlg_model_path'] = './data/pretrained/lstm_tanh_[1470015675.73]_115_120_0.657.p'
 
+# TODO: 读取agent和data set的相关配置参数,并且加到params中，通过指定特定的agent和data set，减少需要的参数
 config = importlib.import_module('settings.config_'+params['db'])
 agent_params = config.agent_params
 dataset_params = config.dataset_params
@@ -80,13 +85,20 @@ from deep_dialog.usersims import RuleSimulator, TemplateNLG, S2SNLG
 from deep_dialog.objects import SlotReader
 from deep_dialog import dialog_config
 
+# TODO: 读取预先定义好的act类型，并编号
 act_set = DictReader()
 act_set.load_dict_from_file(params['act_set'])
 
+# TODO: 读取预先定义的所有可能的槽，不同规模的dataset的槽基本相同, 以下7个是imdb-M的槽
+# moviename actor critic_rating genre mpaa_rating release_year director
 slot_set = SlotReader(slot_path)
 
+# dict_path中保存的是数据集上每个槽到槽中值的list的映射，是一个2进制文件，必须通过2进制读取
 movie_kb = MovieDict(dict_path)
+# movie_kb实际包含了数据集上每个槽到槽中值的set的映射、每个槽到槽中值set长度的映射
+# 以及每个slot下不同的token(不含停止词的单词)到槽值的index的映射
 
+# TODO：全db和按比例缺失db
 db_full = Database(db_full_path, movie_kb, name=params['dataset'])
 db_inc = Database(db_inc_path, movie_kb, name='incomplete%.2f_'%params['unk']+params['dataset'])
 
