@@ -114,16 +114,26 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
                     float(n_suc)/tot, float(n_fail)/tot, float(n_inc)/tot, avg_loss, te)
 
     def initialize_episode(self):
+        '''
+        在user simulator初始化之后，根据对话状态(user_action)初始化agent
+        :return:
+        '''
         self.episode_count += 1
         if self.training and self.episode_count%self.batch_size==0:
             self.num_updates += 1
             if self.num_updates>self.pol_start and self.num_updates%ANNEAL==0: self.anneal_lr()
             tst = time.time()
-            if self.num_updates < self.pol_start: 
+            if self.num_updates < self.pol_start:
+                # 当更新次数小于pol_start时，使用SL方式更新参数
                 all_loss = self.update(regime='SL')
                 loss = all_loss[0]
                 kl_loss = all_loss[1:len(dialog_config.inform_slots)+1]
+                # KL散度
+
                 x_loss = all_loss[len(dialog_config.inform_slots)+1:]
+                # TODO: x_loss是什么？有多少个?
+                print(len(x_loss))
+
                 t_elap = time.time() - tst
                 if self.num_updates%DISPF==0: self._print_progress(loss, t_elap, kl_loss, x_loss)
             else: 
