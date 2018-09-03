@@ -7,6 +7,10 @@ import lasagne
 import theano
 import lasagne.layers as L
 import theano.tensor as T
+
+from theano import config
+config.compute_test_value = 'raise'
+
 import numpy as np
 import sys
 import time
@@ -114,8 +118,8 @@ class E2ERLAgent:
             # p: B x V, m- num missing, N- total, p0: 1 x V
 
             # TODO: B和V的含义，也要进行确定
-            print("type of p: {}, value of p: {}, evaluation of p: {}".format(type(p), p.get_value(), p.eval()))
-            print("0-like p: {}".format(p))
+            print("type of p: {}".format(type(p)))
+            print("value of p: {}".format(p.tag.test_value))
 
             t_unk = T.as_tensor_variable(float(m)/N)
             ps = p*(1.-t_unk)
@@ -151,11 +155,12 @@ class E2ERLAgent:
 
             # TODO: D 和H 到底表示什么？
             print("input var type: {}".format(type(input_var)))
-            # print("input var value: {}".format(input_var.get_value()))
-            print ("input var evaluation: {}".format(input_var.eval()))
+            print ("input var evaluation: {}".format(input_var.tag.test_value))
+
             hid_out = L.get_output(l_rnn)[:,-1,:]
             # TODO: hid_out是RNN最终输出的output吗？跟tensorflow，pytorch有什么区别？
-            print("hid out: {}".format(hid_out))
+            print("hid out type: {}".format(type(hid_out)))
+
             p_targ = T.ftensor3('p_target_'+s)
             p_t = T.reshape(p_targ, 
                     (p_targ.shape[0]*p_targ.shape[1],self.slot_sizes[i]))
