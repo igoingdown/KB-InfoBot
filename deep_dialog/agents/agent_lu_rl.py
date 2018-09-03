@@ -150,7 +150,9 @@ class E2ERLAgent:
                     (input_var.shape[0]*input_var.shape[1], self.r_hid)) # BH x D
 
             # TODO: D 和H 到底表示什么？
-            print("input var: {}, value: {}, evaluate: {}".format(input_var, input_var.get_value(), input_var.eval()))
+            print("input var type: {}".format(type(input_var)))
+            print("input var value: {}".format(input_var.get_value()))
+            print ("input var evaluation: {}".format(input_var.eval()))
             hid_out = L.get_output(l_rnn)[:,-1,:]
             # TODO: hid_out是RNN最终输出的output吗？跟tensorflow，pytorch有什么区别？
             print("hid out: {}".format(hid_out))
