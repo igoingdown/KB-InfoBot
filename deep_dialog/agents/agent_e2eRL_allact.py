@@ -31,7 +31,7 @@ ANNEAL = 800
 
 class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
     def __init__(self, movie_dict=None, act_set=None, slot_set=None, db=None, corpus=None,
-            train=True, _reload=False, n_hid=100, batch=128, ment=0., inputtype='full', upd=10, 
+            train=True, _reload=False, n_hid=100, batch=128, ment=0., input_type='full', upd=10,
             sl='e2e', rl='e2e', pol_start=600, lr=0.005, N=1, tr=2.0, ts=0.5, max_req=2, frac=0.5, 
             name=None):
         '''
@@ -39,24 +39,24 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         :param movie_dict:
         :param act_set:
         :param slot_set:
-        :param db:
+        :param db: database
         :param corpus:
-        :param train: train or evaluate
-        :param _reload: ??
-        :param n_hid: ?
+        :param train: 指定 train 还是 evaluate
+        :param _reload: 在测试阶段需要使用reload重载训练的模型
+        :param n_hid: hidden size
         :param batch: batch size
-        :param ment: ??
-        :param inputtype: 确定policy network的特征输入模式，可以是entropy或者full,entropy更特征更少
-        :param upd:
-        :param sl: e2e
-        :param rl: e2e
-        :param pol_start: ??
+        :param ment: Entropy regularization parameter，这个怎么用？？
+        :param input_type: 确定policy network的特征输入模式，可以是entropy或者full,entropy时使用计算熵的方式对输入特征进行降维
+        :param upd: Update count for bayesian belief tracking
+        :param sl: 指定 supervised learning 应用于哪个网络, 可以用于belief tracking，policy network或者两者都使用(e2e，默认设定)
+        :param rl: 指定reinforcement learning 应用于哪个网络，可以用于belief tracking, policy network或者两者都用(e2e，默认设定)
+        :param pol_start: 将RL应用于policy network的iteration下限
         :param lr:learning rate, 0.05
-        :param N: featN, 2 ??
-        :param tr: ??
-        :param ts: ??
-        :param max_req: ??
-        :param frac: ??
+        :param N: featN, N-gram's N, used in simple rule feature extraction，一般是2
+        :param tr: database entropy's threshold to inform
+        :param ts: slot entropy's threshold to request
+        :param max_req: Maximum requests allowed for per slot
+        :param frac: Ratio to initial slot entropy, 一个slot的entropy如果低于这个下限，这个slot就再也不会被问到(request)
         :param name:
         '''
         self.movie_dict = movie_dict
@@ -71,7 +71,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         slot_sizes = [self.movie_dict.lengths[s] for s in dialog_config.inform_slots]
         print "slot_sizes: {}".format(slot_sizes)
         self._init_model(in_size, out_size, slot_sizes, self.database, \
-                n_hid=n_hid, learning_rate_sl=lr, batch_size=batch, ment=ment, inputtype=inputtype, \
+                n_hid=n_hid, learning_rate_sl=lr, batch_size=batch, ment=ment, input_type=input_type, \
                 sl=sl, rl=rl)
         self._name = name
         if _reload: self.load_model(dialog_config.MODEL_PATH+self._name)
@@ -124,7 +124,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
             if self.num_updates>self.pol_start and self.num_updates%ANNEAL==0: self.anneal_lr()
             tst = time.time()
             if self.num_updates < self.pol_start:
-                # 当更新次数小于pol_start时，使用SL方式更新参数
+                # 当更新/训练轮数小于pol_start时，使用SL方式更新参数
                 all_loss = self.update(regime='SL')
                 loss = all_loss[0]
                 kl_loss = all_loss[1:len(dialog_config.inform_slots)+1]
@@ -136,7 +136,8 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
 
                 t_elap = time.time() - tst
                 if self.num_updates%DISPF==0: self._print_progress(loss, t_elap, kl_loss, x_loss)
-            else: 
+            else:
+                # 当更新/训练轮数 >= pol_start时，使用RL的方式更新参数
                 loss = self.update(regime='RL')
                 t_elap = time.time() - tst
                 if self.num_updates%DISPF==0: self._print_progress(loss, t_elap)

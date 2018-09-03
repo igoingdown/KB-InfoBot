@@ -26,7 +26,7 @@ ANNEAL = 800
 class AgentSimpleRLAllActHardDB(RLAgent,HardDB,BeliefTracker):
     def __init__(self, movie_dict=None, act_set=None, slot_set=None, db=None, 
             train=True, _reload=False, n_hid=100, batch=128, ment=0.,
-            inputtype='full', pol_start=0, upd=10, tr=2.0, ts=0.5, 
+            input_type='full', pol_start=0, upd=10, tr=2.0, ts=0.5,
             max_req=2, frac=0.5, lr=0.005, name=None):
         self.movie_dict = movie_dict
         self.act_set = act_set
@@ -34,10 +34,10 @@ class AgentSimpleRLAllActHardDB(RLAgent,HardDB,BeliefTracker):
         self.database = db
         self.max_turn = dialog_config.MAX_TURN
         self.training = train
-        self.inputtype = inputtype
+        self.input_type = input_type
         self.pol_start = pol_start
         self.upd = upd
-        if inputtype=='entropy':
+        if input_type=='entropy':
             #in_size = 3*len(dialog_config.inform_slots)+1
             in_size = 3*len(dialog_config.inform_slots)+6 # 6 bins for number of retrieved results
         else:
@@ -126,7 +126,7 @@ class AgentSimpleRLAllActHardDB(RLAgent,HardDB,BeliefTracker):
             s_p = self.state['inform_slots'][s]/self.state['inform_slots'][s].sum()
             H_slots[s] = tools.entropy_p(s_p)
         p_vector = np.zeros((self.in_size,)).astype('float32')
-        if self.inputtype=='entropy':
+        if self.input_type=='entropy':
             for i,s in enumerate(dialog_config.inform_slots):
                 if s in H_slots: p_vector[i] = H_slots[s]
                 p_vector[i+len(dialog_config.inform_slots)] = 1. if s in self.state['dont_care'] \

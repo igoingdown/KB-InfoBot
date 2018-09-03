@@ -75,7 +75,7 @@ class RuleSimulator:
                         random.randint(1,min(self.max_first_turn,len(care_about))))
                 for s in known_slots:
                     self.state['inform_slots'][s] = self.goal['inform_slots'][s]
-            # 从goal的request_slots中抽取一个作为当期state的request_slots
+            # 从goal的request_slots中抽取一个作为当前state的request_slots
             if len(self.goal['request_slots']) > 0:
                 request_slot = random.choice(self.goal['request_slots'].keys())
                 self.state['request_slots'][request_slot] = 'UNK'
@@ -150,7 +150,7 @@ class RuleSimulator:
 
     def initialize_episode(self):
         '''
-        initialization，先采样一条记录用户期待的答案，然后随机采样生成用户的初始输入(action)
+        initialization，先采样一条记录作为用户开启本次对话(episode)时想要的答案，然后随机采样生成用户的初始输入(action)
         :return: 返回用户开始的action
         '''
         self._sample_goal()
@@ -212,7 +212,7 @@ class RuleSimulator:
 
     def corrupt(self):
         '''
-        用户可能会犯浑！用户的记忆是不牢靠的，以一定概率修改用户的先验知识
+        用户可能会犯浑，用户的记忆是不牢靠的，以一定概率修改用户的先验知识
         :return:
         '''
         self.state['inform_slots_noisy'] = {}

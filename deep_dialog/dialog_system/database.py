@@ -112,15 +112,20 @@ class Database:
                 for slot in self.slots}
 
     def _prepare_for_entropy(self, dicts):
+        '''
+
+        :param dicts: movie dict
+        :return:
+        '''
         self.ids = {}
         self.ns = {}
         self.non0 = {}
         self.unks = {}
         for i,s in enumerate(self.slots):
             V = dicts.lengths[s]
-            db_c = self.table[:,i]
-            self.unks[s] = np.where(db_c==V)[0]
-            self.ids[s] = (np.mgrid[:self.priors[s].shape[0],:self.N]==db_c)[0]
+            table_column_i = self.table[:,i]
+            self.unks[s] = np.where(table_column_i==V)[0]
+            self.ids[s] = (np.mgrid[:self.priors[s].shape[0],:self.N]==table_column_i)[0]
             self.ns[s] = self.ids[s].sum(axis=1)
             self.non0[s] = np.nonzero(self.ns[s])[0]
 

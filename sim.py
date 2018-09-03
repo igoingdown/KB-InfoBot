@@ -99,7 +99,7 @@ if agent_type == 'act-rule':
 elif agent_type == 'simple-rl-soft':
     agent = AgentSimpleRLAllAct(movie_kb, act_set, slot_set, db_inc, train=False, _reload=True,
             n_hid=params['nhid'], batch=params['batch'], ment=params['ment'],
-            inputtype=params['input'],
+            input_type=params['input'],
             pol_start=params['pol_start'], lr=params['lr'], upd=params['upd'], tr=params['tr'],
             ts=params['ts'], frac=params['frac'], max_req=params['max_req'], 
             name=params['model_name'])
@@ -107,7 +107,7 @@ elif agent_type == 'simple-rl-hard':
     agent = AgentSimpleRLAllActHardDB(movie_kb, act_set, slot_set, db_inc, train=False, 
             _reload=True,
             n_hid=params['nhid'], batch=params['batch'], ment=params['ment'],
-            inputtype=params['input'],
+            input_type=params['input'],
             pol_start=params['pol_start'], lr=params['lr'], upd=params['upd'],
             ts=params['ts'], frac=params['frac'], max_req=params['max_req'], 
             name=params['model_name'])
@@ -115,7 +115,7 @@ elif agent_type == 'simple-rl-no':
     agent = AgentSimpleRLAllActNoDB(movie_kb, act_set, slot_set, db_inc, train=False, 
             _reload=True,
             n_hid=params['nhid'], batch=params['batch'], ment=params['ment'],
-            inputtype=params['input'],
+            input_type=params['input'],
             pol_start=params['pol_start'], lr=params['lr'], upd=params['upd'],
             ts=params['ts'], frac=params['frac'], max_req=params['max_req'], 
             name=params['model_name'])
@@ -124,7 +124,7 @@ elif agent_type == 'e2e-rl-soft':
             _reload=True, pol_start=params['pol_start'], sl=params['sl'], rl=params['rl'],
             n_hid=params['nhid'], batch=params['batch'], ment=params['ment'], lr=params['lr'],
             N=params['featN'],
-            inputtype=params['input'], tr=params['tr'], ts=params['ts'], frac=params['frac'],
+            input_type=params['input'], tr=params['tr'], ts=params['ts'], frac=params['frac'],
             max_req=params['max_req'], upd=params['upd'], name=params['model_name'])
 elif agent_type=='nl-rule-hard':
     agent = AgentNLRuleHard(movie_kb, act_set, slot_set, db_inc, corpus_path,

@@ -115,55 +115,55 @@ user_sim = RuleSimulator(movie_kb, act_set, slot_set, None, max_turn, nlg, err_p
 if agent_type == 'simple-rl-soft':
     agent = AgentSimpleRLAllAct(movie_kb, act_set, slot_set, db_inc, _reload=_reload,
             n_hid=params['nhid'],
-            batch=params['batch'], ment=params['ment'], inputtype=params['input'],
+            batch=params['batch'], ment=params['ment'], input_type=params['input'],
             pol_start=params['pol_start'],
             lr=params['lr'], upd=params['upd'], tr=params['tr'], ts=params['ts'],
             frac=params['frac'], max_req=params['max_req'], name=params['model_name'])
     agent_eval = AgentSimpleRLAllAct(movie_kb, act_set, slot_set, db_inc, train=False,
             _reload=False, n_hid=params['nhid'],
-            batch=params['batch'], ment=params['ment'], inputtype=params['input'],
+            batch=params['batch'], ment=params['ment'], input_type=params['input'],
             pol_start=params['pol_start'],
             lr=params['lr'], upd=params['upd'], tr=params['tr'], ts=params['ts'],
             frac=params['frac'], max_req=params['max_req'], name=params['model_name'])
 elif agent_type == 'simple-rl-no':
     agent = AgentSimpleRLAllActNoDB(movie_kb, act_set, slot_set, db_inc, _reload=_reload,
             n_hid=params['nhid'], batch=params['batch'], ment=params['ment'],
-            inputtype=params['input'],
+            input_type=params['input'],
             pol_start=params['pol_start'], lr=params['lr'], upd=params['upd'],
             ts=params['ts'], frac=params['frac'], max_req=params['max_req'], 
             name=params['model_name'])
     agent_eval = AgentSimpleRLAllActNoDB(movie_kb, act_set, slot_set, db_inc, train=False,
             _reload=False,
             n_hid=params['nhid'], batch=params['batch'], ment=params['ment'],
-            inputtype=params['input'],
+            input_type=params['input'],
             pol_start=params['pol_start'], lr=params['lr'], upd=params['upd'],
             ts=params['ts'], frac=params['frac'], max_req=params['max_req'], 
             name=params['model_name'])
 elif agent_type == 'simple-rl-hard':
     agent = AgentSimpleRLAllActHardDB(movie_kb, act_set, slot_set, db_inc, _reload=_reload,
             n_hid=params['nhid'], batch=params['batch'], ment=params['ment'],
-            inputtype=params['input'],
+            input_type=params['input'],
             pol_start=params['pol_start'], lr=params['lr'], upd=params['upd'],
             ts=params['ts'], frac=params['frac'], max_req=params['max_req'], 
             name=params['model_name'])
     agent_eval = AgentSimpleRLAllActHardDB(movie_kb, act_set, slot_set, db_inc, train=False,
             _reload=False,
             n_hid=params['nhid'], batch=params['batch'], ment=params['ment'],
-            inputtype=params['input'],
+            input_type=params['input'],
             pol_start=params['pol_start'], lr=params['lr'], upd=params['upd'],
             ts=params['ts'], frac=params['frac'], max_req=params['max_req'], 
             name=params['model_name'])
 elif agent_type == 'e2e-rl-soft':
     agent = AgentE2ERLAllAct(movie_kb, act_set, slot_set, db_inc, corpus_path, _reload=_reload,
             n_hid=params['nhid'], batch=params['batch'], ment=params['ment'],
-            inputtype=params['input'], sl=params['sl'],
+            input_type=params['input'], sl=params['sl'],
             rl=params['rl'], pol_start=params['pol_start'], lr=params['lr'], N=params['featN'],
             tr=params['tr'], ts=params['ts'], frac=params['frac'], max_req=params['max_req'],
             upd=params['upd'], name=params['model_name'])
     agent_eval = AgentE2ERLAllAct(movie_kb, act_set, slot_set, db_inc, corpus_path, train=False,
             _reload=False,
             n_hid=params['nhid'], batch=params['batch'], ment=params['ment'],
-            inputtype=params['input'], sl=params['sl'],
+            input_type=params['input'], sl=params['sl'],
             rl=params['rl'], pol_start=params['pol_start'], lr=params['lr'], N=params['featN'],
             tr=params['tr'], ts=params['ts'], frac=params['frac'], max_req=params['max_req'],
             upd=params['upd'], name=params['model_name'])

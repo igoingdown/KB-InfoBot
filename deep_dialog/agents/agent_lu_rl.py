@@ -60,7 +60,23 @@ def aggregate_rewards(rewards,discount):
 class E2ERLAgent:
     def _init_model(self, in_size, out_size, slot_sizes, db, \
             n_hid=10, learning_rate_sl=0.005, learning_rate_rl=0.005, batch_size=32, ment=0.1, \
-            inputtype='full', sl='e2e', rl='e2e'):
+            input_type='full', sl='e2e', rl='e2e'):
+        '''
+
+        :param in_size: feature extractor 抽取出的gram的个数 G_SIZE + inform slots 的个数 INFORM_SLOTS
+        :param out_size: inform slots的个数 + 1
+        :param slot_sizes: 每个slot的value set的大小
+        :param db: database
+        :param n_hid: hidden size
+        :param learning_rate_sl: learning rate for supervised learning, 会变化，训练一定的轮数减少一半
+        :param learning_rate_rl: learning rate for reinforcement learning, 0.005
+        :param batch_size: batch size
+        :param ment:
+        :param input_type: policy network的输入是否要降维(full表示不降维，entropy表示用)
+        :param sl: 在什么阶段应用SL？belief tracker，policy network 还是两个都用(e2e)
+        :param rl: 在什么阶段应用RL？belief tracker，policy network 还是两个都用(e2e)
+        :return:
+        '''
         self.in_size = in_size
         self.out_size = out_size
         self.slot_sizes = slot_sizes
@@ -73,7 +89,10 @@ class E2ERLAgent:
 
         table = db.table
         counts = db.counts
+
         m_unk = [db.inv_counts[s][-1] for s in dialog_config.inform_slots]
+        # m_unk实际上是每个slot的missing value的count 列表
+
         prior = [db.priors[s] for s in dialog_config.inform_slots]
         unknown = [db.unks[s] for s in dialog_config.inform_slots]
         ids = [db.ids[s] for s in dialog_config.inform_slots]
@@ -93,6 +112,10 @@ class E2ERLAgent:
 
         def _add_unk(p,m,N):
             # p: B x V, m- num missing, N- total, p0: 1 x V
+
+            # TODO: B和V的含义，也要进行确定
+            print("shape of p: {}, P * V".format(p.shape()))
+
             t_unk = T.as_tensor_variable(float(m)/N)
             ps = p*(1.-t_unk)
             return T.concatenate([ps, T.tile(t_unk, (ps.shape[0],1))], axis=1)
@@ -103,6 +126,7 @@ class E2ERLAgent:
 
         # belief tracking
         l_in = L.InputLayer(shape=(None,None,self.in_size), input_var=input_var)
+        # input_var: B * H * (G_SIZE + INFORM_SLOTS)
         p_vars = []
         pu_vars = []
         phi_vars = []
@@ -119,13 +143,16 @@ class E2ERLAgent:
             l_rnn = L.GRULayer(l_in, self.r_hid, hid_init=hid_in,  \
                     mask_input=l_mask_in,
                     grad_clipping=10.) # B x H x D
-            #TODO: H、D分别表示什么？
             # 对于不同的Variable，D不同，对于p，D就是当前slot的unique值的个数。对于q，D = 1， 对于P_T, D = N。
-            # H是否为history？表示对话的context信息，即本次对话之前的对话轮次。
+            # H表示hidden size表示对话的。
             l_b_in = L.ReshapeLayer(l_rnn, 
                     (input_var.shape[0]*input_var.shape[1], self.r_hid)) # BH x D
-            hid_out = L.get_output(l_rnn)[:,-1,:]
 
+            # TODO: D 和H 到底表示什么？
+            print( "B: {}, H: {}, D: {}".format(input_var.shape[0], input_var.shape[1], self.r_hid))
+            hid_out = L.get_output(l_rnn)[:,-1,:]
+            # TODO: hid_out是RNN最终输出的output吗？跟tensorflow，pytorch有什么区别？
+            print("hid out shape: {}".format(hid_out.shape()))
             p_targ = T.ftensor3('p_target_'+s)
             p_t = T.reshape(p_targ, 
                     (p_targ.shape[0]*p_targ.shape[1],self.slot_sizes[i]))
@@ -179,7 +206,7 @@ class E2ERLAgent:
 
         p_db = check_db(pu_vars, phi_vars, T_var, N_var) # BH x T.shape[0]
         
-        if inputtype=='entropy':
+        if input_type=='entropy':
             # TODO: 计算H，对特征进行降维
             H_vars = [weighted_entropy(pv,p_db,prior[i],unknown[i],ids[i]) \
                     for i,pv in enumerate(p_vars)]
@@ -216,7 +243,7 @@ class E2ERLAgent:
                 (turn_mask.shape[0]*turn_mask.shape[1], n_hid)) # BH x D
         l_out = L.DenseLayer(l_den_in, self.out_size, \
                 nonlinearity=lasagne.nonlinearities.softmax) # BH x A
-        # A 表示Action size！
+        # A 表示Action sample size！
 
         self.network = l_out
         self.pol_params = L.get_all_params(self.network)
@@ -281,6 +308,11 @@ class E2ERLAgent:
         self.sl_obj_fn = theano.function(sl_inps, sl_loss, on_unused_input='warn')
 
     def _rl_train_fn(self, lr):
+        '''
+        按照rl的方式更新参数
+        :param lr: learning rate
+        :return: None
+        '''
         if self.rl=='e2e':
             updates = lasagne.updates.rmsprop(self.loss, self.params, learning_rate=lr, epsilon=1e-4)
             updates_with_mom = lasagne.updates.apply_momentum(updates)
@@ -323,6 +355,10 @@ class E2ERLAgent:
         return self.sl_obj_fn(inp, tur, act, pin, *ptargets+phitargets+hin)
 
     def anneal_lr(self):
+        '''
+        训练次数每到达一定的值，就讲lr减小一半，这种方式相当不智能！不如使用Adam的优化器！
+        :return:
+        '''
         self.learning_rate /= 2.
         self._rl_train_fn(self.learning_rate)
 
