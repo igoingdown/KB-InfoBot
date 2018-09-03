@@ -151,7 +151,7 @@ class E2ERLAgent:
 
             # TODO: D 和H 到底表示什么？
             print("input var type: {}".format(type(input_var)))
-            print("input var value: {}".format(input_var.get_value()))
+            # print("input var value: {}".format(input_var.get_value()))
             print ("input var evaluation: {}".format(input_var.eval()))
             hid_out = L.get_output(l_rnn)[:,-1,:]
             # TODO: hid_out是RNN最终输出的output吗？跟tensorflow，pytorch有什么区别？
