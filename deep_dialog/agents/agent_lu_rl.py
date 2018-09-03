@@ -149,10 +149,12 @@ class E2ERLAgent:
                     (input_var.shape[0]*input_var.shape[1], self.r_hid)) # BH x D
 
             # TODO: D 和H 到底表示什么？
-            print( "B: {}, H: {}, D: {}".format(input_var.shape[0], input_var.shape[1], self.r_hid))
+            print("input var: {}".format(input_var))
+            print("input var 0-like: {}".format(T.zeros_like(input_var)))
             hid_out = L.get_output(l_rnn)[:,-1,:]
             # TODO: hid_out是RNN最终输出的output吗？跟tensorflow，pytorch有什么区别？
             print("hid out: {}".format(hid_out))
+            print("hid out 0 like: {}".format(T.zeros_like(hid_out)))
             p_targ = T.ftensor3('p_target_'+s)
             p_t = T.reshape(p_targ, 
                     (p_targ.shape[0]*p_targ.shape[1],self.slot_sizes[i]))
