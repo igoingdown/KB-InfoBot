@@ -152,7 +152,7 @@ class E2ERLAgent:
             print( "B: {}, H: {}, D: {}".format(input_var.shape[0], input_var.shape[1], self.r_hid))
             hid_out = L.get_output(l_rnn)[:,-1,:]
             # TODO: hid_out是RNN最终输出的output吗？跟tensorflow，pytorch有什么区别？
-            print("hid out shape: {}".format(hid_out.shape()))
+            print("hid out: {}".format(hid_out))
             p_targ = T.ftensor3('p_target_'+s)
             p_t = T.reshape(p_targ, 
                     (p_targ.shape[0]*p_targ.shape[1],self.slot_sizes[i]))
