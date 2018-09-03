@@ -90,7 +90,7 @@ class Database:
             self.inv_counts[slot] = np.zeros((V+1,)).astype('float32')
             values = [t[i] for t in self.tuples]
             # 每条记录的第i个slot值列表
-            print "dicts.dict[slot]: {}".format(dicts.dict[slot])
+            print "dicts.dict[{}]: {}".format(slot, dicts.dict[slot])
             for j,v in enumerate(values):
                 v_id = dicts.dict[slot].index(v) if v!='UNK' else V
                 # print "v: {}, dicts.dict[slot].index(v): {}".format(v, v_id)
