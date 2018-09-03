@@ -114,7 +114,8 @@ class E2ERLAgent:
             # p: B x V, m- num missing, N- total, p0: 1 x V
 
             # TODO: B和V的含义，也要进行确定
-            print("shape of p: {}, P * V".format(p.shape()))
+            print("shape of p: {}, B * V".format(p))
+            print("0-like p: {}".format(p))
 
             t_unk = T.as_tensor_variable(float(m)/N)
             ps = p*(1.-t_unk)
