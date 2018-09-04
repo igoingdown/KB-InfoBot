@@ -67,7 +67,7 @@ class E2ERLAgent:
             input_type='full', sl='e2e', rl='e2e'):
         '''
 
-        :param in_size: feature extractor 抽取出的gram的个数 G_SIZE + inform slots 的个数 INFORM_SLOTS
+        :param in_size: feature extractor 抽取出的gram的个数 GRAM_SIZE + inform slots 的个数 INFORM_SLOTS
         :param out_size: inform slots的个数 + 1
         :param slot_sizes: 每个slot的value set的大小
         :param db: database
@@ -108,30 +108,38 @@ class E2ERLAgent:
         db_index_switch = T.bvector('s')
 
         l_mask_in = L.InputLayer(shape=(None,None), input_var=turn_mask)
-        flat_mask = T.reshape(turn_mask, (turn_mask.shape[0]*turn_mask.shape[1],1))
+        flat_mask = T.reshape(turn_mask, (turn_mask.shape[0]*turn_mask.shape[1],1))    # BH * 1
 
         def _smooth(p):
             p_n = p+EPS
             return p_n/(p_n.sum(axis=1)[:,np.newaxis])
 
         def _add_unk(p,m,N):
-            # p: B x V, m- num missing, N- total, p0: 1 x V
+            '''
 
-            # TODO: B和V的含义，也要进行确定
-            print("type of p: {}".format(type(p)))
-            print("value of p: {}".format(p.tag.test_value))
+            :param p: B * V, p0: 1 x V
+            :param m: num missing
+            :param N: total
+            :return:
+            '''
 
             t_unk = T.as_tensor_variable(float(m)/N)
             ps = p*(1.-t_unk)
             return T.concatenate([ps, T.tile(t_unk, (ps.shape[0],1))], axis=1)
 
         def kl_divergence(p,q):
+            '''
+            计算第t轮由神经网络计算出来的p_j和手动计算得到的p_j(q)的KL散度
+            :param p: 第t轮对话，NN Belief Tracker计算出的p_j^t, BH * |V_j|
+            :param q: 第t轮对话，手动方法计算出的p_j^t， BH * |V_j|
+            :return: 返回第t轮当前slot的KL散度
+            '''
             p_n = _smooth(p)
             return -T.sum(q*T.log(p_n), axis=1)
 
         # belief tracking
         l_in = L.InputLayer(shape=(None,None,self.in_size), input_var=input_var)
-        # input_var: B * H * (G_SIZE + INFORM_SLOTS)
+        # input_var: B * H * (GRAM_SIZE + INFORM_SLOTS)
         p_vars = []
         pu_vars = []
         phi_vars = []
@@ -144,22 +152,21 @@ class E2ERLAgent:
         x_loss = []
         self.trackers = []
         for i,s in enumerate(dialog_config.inform_slots):
-            hid_in = T.fmatrix('h')
-            l_rnn = L.GRULayer(l_in, self.r_hid, hid_init=hid_in,  \
+            hid_state_init = T.fmatrix('h')
+            l_rnn = L.GRULayer(l_in, self.r_hid, hid_init=hid_state_init,  \
                     mask_input=l_mask_in,
                     grad_clipping=10.) # B x H x D
-            # 对于不同的Variable，D不同，对于p，D就是当前slot的unique值的个数。对于q，D = 1， 对于P_T, D = N。
-            # H表示hidden size表示对话的。
+            # D = GRAM_SIZE + INFORM_SLOTS，即embedding size
+            # H表示history size, 是一个MAX_TUR维，所以需要一个turn mask！
             l_b_in = L.ReshapeLayer(l_rnn, 
                     (input_var.shape[0]*input_var.shape[1], self.r_hid)) # BH x D
 
-            # TODO: D 和H 到底表示什么？
-            print("input var type: {}".format(type(input_var)))
-            print ("input var evaluation: {}".format(input_var.tag.test_value))
+            # print("input var type: {}".format(type(input_var)))
+            # print ("input var evaluation: {}".format(input_var.tag.test_value))
 
             hid_out = L.get_output(l_rnn)[:,-1,:]
-            # TODO: hid_out是RNN最终输出的output吗？跟tensorflow，pytorch有什么区别？
-            print("hid out type: {}".format(type(hid_out)))
+            # hid_out是RNN最终输出的output，这一点和tensorflow、pytorch是一致的！
+            # print("hid out type: {}".format(type(hid_out)))
 
             p_targ = T.ftensor3('p_target_'+s)
             p_t = T.reshape(p_targ, 
@@ -168,13 +175,14 @@ class E2ERLAgent:
             phi_t = T.reshape(phi_targ, (phi_targ.shape[0]*phi_targ.shape[1], 1))
 
             l_b = L.DenseLayer(l_b_in, self.slot_sizes[i], 
-                    nonlinearity=lasagne.nonlinearities.softmax)
+                    nonlinearity=lasagne.nonlinearities.softmax)     # BH * |V|
             l_phi = L.DenseLayer(l_b_in, 1, 
-                    nonlinearity=lasagne.nonlinearities.sigmoid)
+                    nonlinearity=lasagne.nonlinearities.sigmoid)     # BH * 1
 
             phi = T.clip(L.get_output(l_phi), 0.01, 0.99)
             p = L.get_output(l_b)
-            # phi就是论文中的q，b就是论文中的q!
+            # phi就是论文中的q，p就是论文中的p。
+
             p_u = _add_unk(p, m_unk[i], db.N)
             kl_loss.append(T.sum(flat_mask.flatten()*kl_divergence(p, p_t))/T.sum(flat_mask))
             x_loss.append(T.sum(flat_mask*lasagne.objectives.binary_crossentropy(phi,phi_t))/
@@ -186,7 +194,7 @@ class E2ERLAgent:
             phi_vars.append(phi)
             p_targets.append(p_targ)
             phi_targets.append(phi_targ)
-            hid_in_vars.append(hid_in)
+            hid_in_vars.append(hid_state_init)
             hid_out_vars.append(hid_out)
             self.trackers.append(l_b)
             self.trackers.append(l_phi)
@@ -422,6 +430,10 @@ class E2ERLAgent:
         hi = [np.zeros((1,self.r_hid)).astype('float32') \
                 for s in dialog_config.inform_slots]
         pi = np.zeros((1,self.n_hid)).astype('float32')
+
+        # TODO: 模型训练过程中输入数据到底长什么样？
+        print (i, t, a, r, d, ds, p, ph, hi)
+
         if verbose: print i, t, a, r, d, ds, p, ph, hi
         if regime=='RL':
             r -= np.mean(r)

@@ -23,6 +23,8 @@ class FeatureExtractor:
             f = open(save_path, 'rb')
             self.grams = pkl.load(f)
             self.n = pkl.load(f)
+            # TODO: 为什么一个file可以使用pickle进行多次load？！这是什么操作？
+            print("-" * 200 + "\n" + "grams: {}\nn: {}\n".format(self.grams, self.n) + "-" * 200)
             f.close()
         else:
             self.grams = {}
@@ -38,7 +40,7 @@ class FeatureExtractor:
     def _build_vocab_from_db(self, corpus):
         try:
             # TODO: 查看feature extractor是怎么工作的，这是理解belief tracker的关键
-            print ("db path: {}".format(corpus) + "-" * 200)
+            print ("-" * 200 + "db path: {}".format(corpus) + "\n" + "-" * 200)
             f = io.open(corpus, 'r')
             for line in f:
                 elements = line.rstrip().split('\t')[1:]
@@ -70,7 +72,8 @@ class FeatureExtractor:
     def _build_vocab_from_corpus(self, corpus):
         if not os.path.isfile(corpus): return
         try:
-            print ("")
+            # TODO: 查看feature extractor是怎么工作的，这是理解belief tracker的关键
+            print ("-" * 200 + "corpus path: {}".format(corpus) + "\n" + "-" * 200)
             f = io.open(corpus, 'r')
             for line in f:
                 tokens = to_tokens(line.rstrip())

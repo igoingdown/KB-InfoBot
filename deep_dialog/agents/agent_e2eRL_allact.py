@@ -126,20 +126,22 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
             if self.num_updates>self.pol_start and self.num_updates%ANNEAL==0: self.anneal_lr()
             tst = time.time()
             if self.num_updates < self.pol_start:
-                # 当更新/训练轮数小于pol_start时，使用SL方式更新参数
+                # 初始条件下使用SL方式更新参数
                 all_loss = self.update(regime='SL')
                 loss = all_loss[0]
                 kl_loss = all_loss[1:len(dialog_config.inform_slots)+1]
-                # KL散度
+                # p的KL散度
 
                 x_loss = all_loss[len(dialog_config.inform_slots)+1:]
-                # TODO: x_loss是什么？有多少个?
-                print(len(x_loss))
+                # q的熵
+
+                # TODO:
+                print("-" * 200 + "\n" + "x_loss length:{}".format(len(x_loss)))
 
                 t_elap = time.time() - tst
                 if self.num_updates%DISPF==0: self._print_progress(loss, t_elap, kl_loss, x_loss)
             else:
-                # 当更新/训练轮数 >= pol_start时，使用RL的方式更新参数
+                # 开始使用RL的方式更新参数
                 loss = self.update(regime='RL')
                 t_elap = time.time() - tst
                 if self.num_updates%DISPF==0: self._print_progress(loss, t_elap)

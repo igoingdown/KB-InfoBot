@@ -36,5 +36,6 @@ class MovieDict:
             self.tokens[slot] = defaultdict(list)
             for vi,vv in enumerate(vals):
                 w_v = to_tokens(vv)
+                # TODO: 这些token是什么？这应该不是N-Gram的token吧！
                 print "slot value: ", vv, ", tokens: ", w_v
                 for w in w_v: self.tokens[slot][w].append(vi)
