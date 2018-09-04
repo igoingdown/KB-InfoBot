@@ -127,6 +127,7 @@ class Database:
             self.unks[s] = np.where(table_column_i==V)[0]
             self.ids[s] = (np.mgrid[:self.priors[s].shape[0],:self.N]==table_column_i)[0]
             # TODO: ids是什么？
+            print("-" * 200 + "\nmgrid: {}\ntable_column_i: {}\n".format(np.mgrid[:self.priors[s].shape[0],:self.N], table_column_i) + "-" * 200)
             print("-" * 200 + "\n第 {} 个 slot：slot {} 的ids: {}\n".format(i, s, self.ids[s]) + "-" * 200)
             self.ns[s] = self.ids[s].sum(axis=1)
             self.non0[s] = np.nonzero(self.ns[s])[0]
