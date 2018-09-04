@@ -8,8 +8,8 @@ import theano
 import lasagne.layers as L
 import theano.tensor as T
 
-from theano import config
-config.compute_test_value = 'raise'
+# from theano import config
+# config.compute_test_value = 'raise'
 
 import numpy as np
 import sys
