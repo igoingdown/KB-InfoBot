@@ -117,7 +117,7 @@ class E2ERLAgent:
         def _add_unk(p,m,N):
             '''
 
-            :param p: B * V, p0: 1 x V
+            :param p: BH * V, p0: 1 x V
             :param m: num missing
             :param N: total
             :return:
@@ -201,6 +201,14 @@ class E2ERLAgent:
         self.bt_params = L.get_all_params(self.trackers)
 
         def check_db(pv, phi, Tb, N):
+            '''
+            根据p^t和q^t计算p_tao^t，即计算在第t个turn对每行感兴趣的概率并归一化
+            :param pv: 第t个turn每个slot的p列表，包含Missing Value
+            :param phi: 第t个turn每个slot的q列表
+            :param Tb: Table
+            :param N: counts
+            :return: 对每个行感兴趣的列表
+            '''
             O = T.alloc(0.,pv[0].shape[0],Tb.shape[0]) # BH x T.shape[0]
             for i,p in enumerate(pv):
                 p_dc = T.tile(phi[i], (1, Tb.shape[0]))
@@ -211,10 +219,23 @@ class E2ERLAgent:
             return Op/Os
 
         def entropy(p):
+            '''
+            对p进行平滑并计算entropy
+            :param p: 平滑之前的参数
+            :return: entropy
+            '''
             p = _smooth(p)
             return -T.sum(p*T.log(p), axis=-1)
 
         def weighted_entropy(p,q,p0,unks,idd):
+            '''
+            :param p: 第t个turn的p_j^t，不包含Missing Value
+            :param q: 第t个turn的q_j^t，不包含Missing Value
+            :param p0: 第t个turn对每列感兴趣的概率列表
+            :param unks: 每个slot下的Missing Value所在的行号
+            :param idd:
+            :return:
+            '''
             w = T.dot(idd,q.transpose()) # Pi x BH
             u = p0[np.newaxis,:]*(q[:,unks].sum(axis=1)[:,np.newaxis]) # BH x Pi
             p_tilde = w.transpose()+u
@@ -432,7 +453,7 @@ class E2ERLAgent:
         pi = np.zeros((1,self.n_hid)).astype('float32')
 
         # TODO: 模型训练过程中输入数据到底长什么样？
-        print (i, t, a, r, d, ds, p, ph, hi)
+        # print (i, t, a, r, d, ds, p, ph, hi)
 
         if verbose: print i, t, a, r, d, ds, p, ph, hi
         if regime=='RL':
