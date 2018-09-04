@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 '''
 '''
 
@@ -15,6 +18,8 @@ class FeatureExtractor:
         self.N = N
         save_path = db_path.rsplit('/',1)[0] + '/fdict_%d.p'%N
         if os.path.isfile(save_path):
+            # TODO: 查看feature extractor是怎么工作的
+            print("save path: {}".format(save_path) + "-" * 200)
             f = open(save_path, 'rb')
             self.grams = pkl.load(f)
             self.n = pkl.load(f)
@@ -32,6 +37,8 @@ class FeatureExtractor:
 
     def _build_vocab_from_db(self, corpus):
         try:
+            # TODO: 查看feature extractor是怎么工作的，这是理解belief tracker的关键
+            print ("db path: {}".format(corpus) + "-" * 200)
             f = io.open(corpus, 'r')
             for line in f:
                 elements = line.rstrip().split('\t')[1:]
@@ -63,6 +70,7 @@ class FeatureExtractor:
     def _build_vocab_from_corpus(self, corpus):
         if not os.path.isfile(corpus): return
         try:
+            print ("")
             f = io.open(corpus, 'r')
             for line in f:
                 tokens = to_tokens(line.rstrip())
