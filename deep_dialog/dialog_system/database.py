@@ -126,10 +126,10 @@ class Database:
             table_column_i = self.table[:,i]
             self.unks[s] = np.where(table_column_i==V)[0]
             self.ids[s] = (np.mgrid[:self.priors[s].shape[0],:self.N]==table_column_i)[0]
-            # TODO: ids是什么？
-            grids = np.mgrid[:self.priors[s].shape[0],:self.N]
-            print("-" * 200 + "\ngrid0 shape:{} * {}, grid1 shape: {} * {}\ntable_column_i: {}\n".format(len(grids[0]), len(grids[0][0]), len(grids[1]), len(grids[1][0]), len(table_column_i)) + "-" * 200)
-            print("-" * 200 + "\n第 {} 个 slot：slot {} 的ids shape: {} * {}\n".format(i, s, len(self.ids[s]), len(self.ids[s][0])) + "-" * 200)
+            # ids记录每个slot的value在各行出现的次数，是否出现，shape为|V| * N，第i条记录的第j个slot的value为 v_k 时，ids[k][i] = True.
+            # grids = np.mgrid[:self.priors[s].shape[0],:self.N]
+            # print("-" * 200 + "\ngrid0 shape:{} * {}, grid1 shape: {} * {}\ntable_column_i: {}\n".format(len(grids[0]), len(grids[0][0]), len(grids[1]), len(grids[1][0]), len(table_column_i)) + "-" * 200)
+            # print("-" * 200 + "\n第 {} 个 slot：slot {} 的ids shape: {} * {}\n".format(i, s, len(self.ids[s]), len(self.ids[s][0])) + "-" * 200)
             self.ns[s] = self.ids[s].sum(axis=1)
             self.non0[s] = np.nonzero(self.ns[s])[0]
 

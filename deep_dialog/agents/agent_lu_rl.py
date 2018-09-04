@@ -8,8 +8,8 @@ import theano
 import lasagne.layers as L
 import theano.tensor as T
 
-# from theano import config
-# config.compute_test_value = 'raise'
+from theano import config
+config.compute_test_value = 'warn'
 
 import numpy as np
 import sys
@@ -231,12 +231,15 @@ class E2ERLAgent:
             '''
             :param p: 第t个turn的p_j^t，不包含Missing Value
             :param q: 第t个turn的q_j^t，不包含Missing Value
-            :param p0: 第t个turn对每列感兴趣的概率列表
+            :param p0: 第t个turn对每个record感兴趣的概率列表
             :param unks: 每个slot下的Missing Value所在的行号
-            :param idd:
+            :param idd: ids记录第j个slot的value在各行出现的次数，是否出现，shape为|V| * N，第i条记录的第j个slot的value为 v_k 时，ids[k][i] = True.
             :return:
             '''
             w = T.dot(idd,q.transpose()) # Pi x BH
+            print("-" * 200 + "\nweighted entropy w: ")
+            theano.printing.Print('z2')(w)
+            print("-" * 200)
             u = p0[np.newaxis,:]*(q[:,unks].sum(axis=1)[:,np.newaxis]) # BH x Pi
             p_tilde = w.transpose()+u
             return entropy(p_tilde)
