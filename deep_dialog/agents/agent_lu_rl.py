@@ -296,8 +296,7 @@ class E2ERLAgent:
         ix = T.tile(T.arange(p_db_final.shape[0]),(db_index_var.shape[1],1)).transpose()   # B * db_index_var.shape[1]
         sample_probs = p_db_final[ix,db_index_var] # B x K
         # TODO: db_loss对应论文中的miu，是强化学习的一部分，详细步骤可以参考论文的附录C部分
-        foo = F([input_var, turn_mask, act_mask, reward_var, db_index_var, db_index_switch, pol_in] + hid_in_vars,
-                [ix, db_index_var, sample_probs])
+        foo = F([],[db_index_var, db_index_switch])
         print("-" * 200 + "\nix, db_index_var and sample probs: {}\n".format(foo()) + "-" * 200)
 
         # SUCCESS_MAX_RANK表示允许正确答案最多排到结果列表的第几位，默认值为5
