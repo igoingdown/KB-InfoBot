@@ -7,6 +7,7 @@ import lasagne
 import theano
 import lasagne.layers as L
 import theano.tensor as T
+from theano import function as F
 
 # from theano import config
 # config.compute_test_value = 'warn'
@@ -203,11 +204,11 @@ class E2ERLAgent:
         def check_db(pv, phi, Tb, N):
             '''
             根据p^t和q^t计算p_tao^t，即计算在第t个turn对每行感兴趣的概率并归一化
-            :param pv: 第t个turn每个slot的p列表，包含Missing Value
-            :param phi: 第t个turn每个slot的q列表
+            :param pv: 第t个turn每个slot的p列表，包含Missing Value，M * BH * |V|
+            :param phi: 第t个turn每个slot的q列表， M * BH * 1
             :param Tb: Table
             :param N: counts
-            :return: 对每个行感兴趣的列表
+            :return: 对每个行感兴趣的列表， BH * N
             '''
             O = T.alloc(0.,pv[0].shape[0],Tb.shape[0]) # BH x T.shape[0]
             for i,p in enumerate(pv):
@@ -215,7 +216,7 @@ class E2ERLAgent:
                 O += T.log(p_dc*(1./db.table.shape[0]) + \
                         (1.-p_dc)*(p[:,Tb[:,i]]/N[np.newaxis,:,i]))
             Op = T.exp(O)#+EPS # BH x T.shape[0]
-            Os = T.sum(Op, axis=1)[:,np.newaxis] # BH x 1
+            Os = T.sum(Op, axis=1)[:,np.newaxis] # BH
             return Op/Os
 
         def entropy(p):
@@ -229,25 +230,26 @@ class E2ERLAgent:
 
         def weighted_entropy(p,q,p0,unks,idd):
             '''
-            :param p: 第t个turn的p_j^t，不包含Missing Value
-            :param q: 第t个turn的q_j^t，不包含Missing Value
-            :param p0: 第t个turn对每个record感兴趣的概率列表
+            :param p: 第t个turn的p_j^t，不包含Missing Value, BH * |V|
+            :param q: 第t个turn对每个record感兴趣的概率列表, BH * N
+            :param p0: 第t个turn的p_j^0，即每个slot value的先验分布，频率表示概率，不包括Missing Value, BH * |V|
             :param unks: 每个slot下的Missing Value所在的行号
-            :param idd: ids记录第j个slot的value在各行出现的次数，是否出现，shape为|V| * N，第i条记录的第j个slot的value为 v_k 时，ids[k][i] = True.
-            :return:
+            :param idd: 对于一个特定的slot，第i条记录的value为 v_k 时，ids[k][i] = True.|V| * N
+            :return: p_tilde
             '''
             w = T.dot(idd,q.transpose()) # Pi x BH
+            # TODO: debug失败！
             print("-" * 200 + "\nweighted entropy w: ")
             theano.printing.Print('z2')(w)
             print("-" * 200)
             u = p0[np.newaxis,:]*(q[:,unks].sum(axis=1)[:,np.newaxis]) # BH x Pi
             p_tilde = w.transpose()+u
-            return entropy(p_tilde)
+            return entropy(p_tilde) # BH * 1
 
         p_db = check_db(pu_vars, phi_vars, T_var, N_var) # BH x T.shape[0]
         
         if input_type=='entropy':
-            # TODO: 计算H，对特征进行降维
+            # 计算H，对特征进行降维
             H_vars = [weighted_entropy(pv,p_db,prior[i],unknown[i],ids[i]) \
                     for i,pv in enumerate(p_vars)]
             H_db = entropy(p_db)
@@ -259,7 +261,7 @@ class E2ERLAgent:
                     shape=(None,None,2*len(dialog_config.inform_slots)+1), \
                     input_var=t_in_resh)
         else:
-            # TODO: 不对特征进行降维，特征维度非常高，参数量极大！
+            # 不对特征进行降维，特征维度非常高，参数量极大！
             in_reshaped = T.reshape(input_var, 
                     (input_var.shape[0]*input_var.shape[1], \
                     input_var.shape[2]))
@@ -268,8 +270,6 @@ class E2ERLAgent:
                     axis=1) # BH x D-sum+A
             t_in_resh = T.reshape(t_in, (turn_mask.shape[0], turn_mask.shape[1], \
                     t_in.shape[1])) # B x H x D-sum
-            # D-sum = sum(V_j) + M + N
-            # 对于不同的Variable，D不同，对于p，D就是当前slot的unique值的个数。对于q，D = 1， 对于P_T,D = N。
             l_in_pol = L.InputLayer(shape=(None,None,sum(self.slot_sizes)+ \
                     3*len(dialog_config.inform_slots)+ \
                     table.shape[0]), input_var=t_in_resh)
@@ -278,7 +278,7 @@ class E2ERLAgent:
         l_pol_rnn = L.GRULayer(l_in_pol, n_hid, hid_init=pol_in, 
                 mask_input=l_mask_in,
                 grad_clipping=10.) # B x H x D
-        pol_out = L.get_output(l_pol_rnn)[:,-1,:]
+        pol_out = L.get_output(l_pol_rnn)[:,-1,:] # B * D
         l_den_in = L.ReshapeLayer(l_pol_rnn, 
                 (turn_mask.shape[0]*turn_mask.shape[1], n_hid)) # BH x D
         l_out = L.DenseLayer(l_den_in, self.out_size, \
@@ -290,11 +290,17 @@ class E2ERLAgent:
         self.params = self.bt_params + self.pol_params
 
         # db loss
-        p_db_reshaped = T.reshape(p_db, (turn_mask.shape[0],turn_mask.shape[1],table.shape[0]))
-        p_db_final = p_db_reshaped[:,-1,:] # B x T.shape[0]
+        p_db_reshaped = T.reshape(p_db, (turn_mask.shape[0],turn_mask.shape[1],table.shape[0])) # B * H * N
+        p_db_final = p_db_reshaped[:,-1,:] # B * N
         p_db_final = _smooth(p_db_final)
-        ix = T.tile(T.arange(p_db_final.shape[0]),(db_index_var.shape[1],1)).transpose()
+        ix = T.tile(T.arange(p_db_final.shape[0]),(db_index_var.shape[1],1)).transpose()   # B * db_index_var.shape[1]
         sample_probs = p_db_final[ix,db_index_var] # B x K
+        # TODO: db_loss对应论文中的miu，是强化学习的一部分，详细步骤可以参考论文的附录C部分
+        foo = F([input_var, turn_mask, act_mask, reward_var, db_index_var, db_index_switch, pol_in] + hid_in_vars,
+                [ix, db_index_var, sample_probs])
+        print("-" * 200 + "\nix, db_index_var and sample probs: {}\n".format(foo()) + "-" * 200)
+
+        # SUCCESS_MAX_RANK表示允许正确答案最多排到结果列表的第几位，默认值为5
         if dialog_config.SUCCESS_MAX_RANK==1:
             log_db_probs = T.log(sample_probs).sum(axis=1)
         else:
@@ -312,14 +318,15 @@ class E2ERLAgent:
         log_probs = T.log(out_probs)
         act_probs = (log_probs*act_mask).sum(axis=2) # B x H
         ep_probs = (act_probs*turn_mask).sum(axis=1) # B
-        H_probs = -T.sum(T.sum(out_probs*log_probs,axis=2),axis=1) # B
+        H_probs = -T.sum(T.sum(out_probs*log_probs,axis=2),axis=1) # Entropy
         self.act_loss = -T.mean(ep_probs*reward_var)
         self.db_loss = -T.mean(log_db_probs*reward_var)
+        # TODO: reg_loss是正则化项，但是论文里并没提到，有可能是因为ment默认值为0
         self.reg_loss = -T.mean(ment*H_probs)
         self.loss = self.act_loss + self.db_loss + self.reg_loss
 
         self.inps = [input_var, turn_mask, act_mask, reward_var, db_index_var, db_index_switch, \
-                pol_in] + hid_in_vars
+                pol_in] + hid_in_vars   # inputs
         self.obj_fn = theano.function(self.inps, self.loss, on_unused_input='warn')
         self.act_fn = theano.function([input_var,turn_mask,pol_in]+hid_in_vars, \
                 [out_probs,p_db,pol_out]+pu_vars+phi_vars+hid_out_vars, on_unused_input='warn')
