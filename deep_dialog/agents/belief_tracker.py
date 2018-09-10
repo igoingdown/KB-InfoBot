@@ -19,6 +19,11 @@ class BeliefTracker:
         return float(sum([ww in s_t for ww in w_t]))/len(w_t)
 
     def _search_slots(self, s_t):
+        '''
+        在用户输入中查找出现的slot名称，这里已经转为了token操作
+        :param s_t: 用户输入的token化结果
+        :return: 匹配统计结果
+        '''
         matches = {}
         for slot,slot_t in self.state['database'].slot_tokens.iteritems():
             m = self._search(slot_t,s_t)
@@ -27,6 +32,11 @@ class BeliefTracker:
         return matches
 
     def _search_values(self, s_t):
+        '''
+        在用户输入中查找出现的slot value，这里已经转为了token操作
+        :param s_t: 用户输入的token化结果
+        :return: 匹配统计结果
+        '''
         matches = {}
         for slot in self.state['database'].slots:
             matches[slot] = defaultdict(float)
@@ -39,8 +49,14 @@ class BeliefTracker:
                 matches[slot][vi] = f/len(nltk.word_tokenize(val))
         return matches
 
-    ''' update agent state '''
     def _update_state(self, user_utterance, upd=UPD, verbose=False):
+        '''
+        根据用户输入，暴力查找用户输入中的关键字(token)，就地改变BT的状态
+        :param user_utterance: 用户输入
+        :param upd: 当前训练次数(模型更新次数)
+        :param verbose: 是否启用唠叨模式
+        :return: None
+        '''
         prev_act, prev_slot = self.state['prevact'].split('@')
 
         s_t = to_tokens(user_utterance)
@@ -51,7 +67,7 @@ class BeliefTracker:
             requested = (prev_act=='request') and (prev_slot==slot)
             matched = (slot in slot_match)
             if not values:
-                if requested: # asked for value but did not get it
+                if requested: # asked for value but did not get it，就不再关心这个slot了！
                     self.state['database'].delete_slot(slot)
                     self.state['num_requests'][slot] = 1000
                     self.state['dont_care'].add(slot)
@@ -69,9 +85,14 @@ class BeliefTracker:
                     else:
                         alpha = upd*match
                     self.state['inform_slots'][slot][y] += alpha
+                    # TODO: inform_slots到底是记录什么的？为什么要乘上10？
                 self.state['slot_tracker'].add(slot)
 
     def _init_beliefs(self):
+        '''
+        初始化BT，用Database的先验分布(均匀分布)对每个slot的BT进行初始化
+        :return: 初始化过的BT
+        '''
         beliefs = {s:np.copy(self.state['database'].priors[s]) 
                 for s in self.state['database'].slots}
         return beliefs

@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 from collections import Counter
 from deep_dialog import tools
 import numpy as np
@@ -7,6 +10,13 @@ def standardize(arr):
     return arr
 
 def calc_entropies(state, q, db):
+    '''
+
+    :param state:
+    :param q:
+    :param db:
+    :return:
+    '''
     entropies = {}
     for s,c in state.iteritems():
         if s not in db.slots:

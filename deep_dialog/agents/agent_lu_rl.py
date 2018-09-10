@@ -67,20 +67,20 @@ class E2ERLAgent:
             n_hid=10, learning_rate_sl=0.005, learning_rate_rl=0.005, batch_size=32, ment=0.1, \
             input_type='full', sl='e2e', rl='e2e'):
         '''
-
+        初始化model，后面的工作只需要调用其中的函数或者查看其中的属性即可
         :param in_size: feature extractor 抽取出的gram的个数 GRAM_SIZE + inform slots 的个数 INFORM_SLOTS
-        :param out_size: inform slots的个数 + 1
+        :param out_size: inform slots的个数 + 1，表示所有可选的action空间
         :param slot_sizes: 每个slot的value set的大小
         :param db: database
-        :param n_hid: hidden size
+        :param n_hid: hidden size，RNN的隐向量的size
         :param learning_rate_sl: learning rate for supervised learning, 会变化，训练一定的轮数减少一半
         :param learning_rate_rl: learning rate for reinforcement learning, 0.005
         :param batch_size: batch size
-        :param ment:
+        :param ment: RL正则化loss的权重，在不需要正则化项的时候可以将这个超参数设为0
         :param input_type: policy network的输入是否要降维(full表示不降维，entropy表示用)
         :param sl: 在什么阶段应用SL？belief tracker，policy network 还是两个都用(e2e)
         :param rl: 在什么阶段应用RL？belief tracker，policy network 还是两个都用(e2e)
-        :return:
+        :return: 初始化model，包括定义神经网络结构、loss、临时存储各种计算结果的列表
         '''
         self.in_size = in_size
         self.out_size = out_size
@@ -295,9 +295,9 @@ class E2ERLAgent:
         p_db_final = _smooth(p_db_final)
         ix = T.tile(T.arange(p_db_final.shape[0]),(db_index_var.shape[1],1)).transpose()   # B * db_index_var.shape[1]
         sample_probs = p_db_final[ix,db_index_var] # B x K
-        # TODO: db_loss对应论文中的miu，是强化学习的一部分，详细步骤可以参考论文的附录C部分
-        foo = F([],[db_index_var, db_index_switch])
-        print("-" * 200 + "\nix, db_index_var and sample probs: {}\n".format(foo()) + "-" * 200)
+        # db_loss对应论文中的miu，是强化学习的一部分，详细步骤可以参考论文的附录C部分
+        # foo = F([],[db_index_var, db_index_switch])
+        # print("-" * 200 + "\nix, db_index_var and sample probs: {}\n".format(foo()) + "-" * 200)
 
         # SUCCESS_MAX_RANK表示允许正确答案最多排到结果列表的第几位，默认值为5
         if dialog_config.SUCCESS_MAX_RANK==1:
@@ -320,7 +320,7 @@ class E2ERLAgent:
         H_probs = -T.sum(T.sum(out_probs*log_probs,axis=2),axis=1) # Entropy
         self.act_loss = -T.mean(ep_probs*reward_var)
         self.db_loss = -T.mean(log_db_probs*reward_var)
-        # TODO: reg_loss是正则化项，但是论文里并没提到，有可能是因为ment默认值为0
+        # reg_loss是正则化项，但是论文里并没提到，这是因为ment默认值为0
         self.reg_loss = -T.mean(ment*H_probs)
         self.loss = self.act_loss + self.db_loss + self.reg_loss
 
@@ -374,9 +374,47 @@ class E2ERLAgent:
                 updates=updates)
 
     def train(self, inp, tur, act, rew, db, dbs, pin, hin):
+        '''
+        训练模型
+        :param inp: input
+        :param tur: turn
+        :param act:
+        :param rew: reward
+        :param db: database
+        :param dbs:
+        :param pin:
+        :param hin:
+        :return:
+        '''
         return self.train_fn(inp, tur, act, rew, db, dbs, pin, *hin)
 
+    def sl_train(self, inp, tur, act, pin, ptargets, phitargets, hin):
+        '''
+        训练初期使用SL的方式训练模型，监督信号是手工计算的p和q
+        :param inp:
+        :param tur:
+        :param act:
+        :param pin:
+        :param ptargets: 手工计算的p
+        :param phitargets: 手工计算的q
+        :param hin:
+        :return: 返回计算得到的loss，并更新参数
+        '''
+        return self.sl_train_fn(inp, tur, act, pin, *ptargets+phitargets+hin)
+
     def evaluate(self, inp, tur, act, rew, db, dbs, pin, hin):
+        '''
+        通过计算模型的loss评测模型
+        :param inp:
+        :param tur:
+        :param act:
+        :param rew:
+        :param db:
+        :param dbs:
+        :param pin:
+        :param hin:
+        :return: 返回模型的loss，不更新参数
+        '''
         return self.obj_fn(inp, tur, act, rew, db, dbs, pin, *hin)
 
     def act(self, inp, pin, hin, mode='sample'):
@@ -393,9 +431,6 @@ class E2ERLAgent:
         else:
             db_sample = []
         return action, db_sample, db_p.flatten(), p_out, h_out, pv, phiv
-
-    def sl_train(self, inp, tur, act, pin, ptargets, phitargets, hin):
-        return self.sl_train_fn(inp, tur, act, pin, *ptargets+phitargets+hin)
 
     def sl_evaluate(self, inp, tur, act, pin, ptargets, phitargets, hin):
         return self.sl_obj_fn(inp, tur, act, pin, *ptargets+phitargets+hin)
@@ -415,6 +450,11 @@ class E2ERLAgent:
             print item
 
     def _init_experience_pool(self, pool):
+        '''
+        初始化各种pool为deque，最大长度为pool
+        :param pool: batch size, 128 by default, 下面作为deque的最大长度
+        :return: None
+        '''
         self.input_pool = deque([], pool)
         self.actmask_pool = deque([], pool)
         self.reward_pool = deque([], pool)
@@ -435,6 +475,11 @@ class E2ERLAgent:
         self.phitarget_pool.append(phitargets)
 
     def _get_minibatch(self, N):
+        '''
+        用随机抽样的方式生成batch数据
+        :param N: Table的行数/记录条数
+        :return: 重新抽样得到的数据
+        '''
         n = min(N, len(self.input_pool))
         index = random.sample(range(len(self.input_pool)), n)
         i = [self.input_pool[ii] for ii in index]
@@ -456,6 +501,12 @@ class E2ERLAgent:
                 pp, pph
 
     def update(self, verbose=False, regime='RL'):
+        '''
+        这是在干啥？
+        :param verbose: 是否开启唠叨模式以便debug
+        :param regime: 用SL的方式训练还是使用RL的方式训练
+        :return: loss，RL模式返回action loss， database sample loss 和 正则化项loss， SL模式返回
+        '''
         i, t, a, r, d, ds, p, ph = self._get_minibatch(self.batch_size)
         hi = [np.zeros((1,self.r_hid)).astype('float32') \
                 for s in dialog_config.inform_slots]

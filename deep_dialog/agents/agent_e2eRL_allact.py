@@ -45,13 +45,13 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         :param _reload: 在测试阶段需要使用reload重载训练的模型
         :param n_hid: hidden size
         :param batch: batch size
-        :param ment: Entropy regularization parameter，这个怎么用？？
+        :param ment: Entropy regularization parameter，RL正则化项loss的权重，不需要正则化项时设为0，这也是默认设置！
         :param input_type: 确定policy network的特征输入模式，可以是entropy或者full,entropy时使用计算熵的方式对输入特征进行降维
         :param upd: Update count for bayesian belief tracking
         :param sl: 指定 supervised learning 应用于哪个网络, 可以用于belief tracking，policy network或者两者都使用(e2e，默认设定)
         :param rl: 指定reinforcement learning 应用于哪个网络，可以用于belief tracking, policy network或者两者都用(e2e，默认设定)
         :param pol_start: 将RL应用于policy network的iteration下限
-        :param lr:learning rate, 0.05
+        :param lr:learning rate, 对RL和SL有不同的设置，而且SL的learning rate会逐渐变小
         :param N: featN, N-gram's N, used in simple rule feature extraction，一般是2
         :param tr: database entropy's threshold to inform
         :param ts: slot entropy's threshold to request
@@ -80,10 +80,13 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         if train: self.save_model(dialog_config.MODEL_PATH+self._name)
         self._init_experience_pool(batch)
         self.episode_count = 0
+
+        # TODO:为什么要记录recent的reward，loss？
         self.recent_rewards = deque([], 1000)
         self.recent_successes = deque([], 1000)
         self.recent_turns = deque([], 1000)
         self.recent_loss = deque([], 10)
+
         self.discount = 0.99
         self.num_updates = 0
         self.pol_start = pol_start
@@ -130,14 +133,9 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
                 all_loss = self.update(regime='SL')
                 loss = all_loss[0]
                 kl_loss = all_loss[1:len(dialog_config.inform_slots)+1]
-                # p的KL散度
-
+                # kl_loss:每个slot的模型预测p和手工计算的p_target的KL散度
                 x_loss = all_loss[len(dialog_config.inform_slots)+1:]
-                # q的熵
-
-                # TODO:
-                print("-" * 200 + "\n" + "x_loss length:{}".format(len(x_loss)))
-
+                # x_loss每个slot的模型预测q和手工计算q_target的交叉熵
                 t_elap = time.time() - tst
                 if self.num_updates%DISPF==0: self._print_progress(loss, t_elap, kl_loss, x_loss)
             else:
@@ -171,8 +169,8 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
     def next(self, user_action, verbose=False):
         '''
         get next action based on rules
-        :param user_action:
-        :param verbose: 是否打印模型运行过程产生的log
+        :param user_action: 用户输入之后，新的state
+        :param verbose: 是否打印模型运行过程产生的log，是否开启唠叨模式
         :return: 产生后续的对话状态
         '''
         self.state['turn'] += 1
