@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-
 '''
 
 '''
@@ -38,5 +37,5 @@ class MovieDict:
                 w_v = to_tokens(vv)
                 # TODO: 这些token是什么？这应该不是N-Gram的token吧！
 
-                print("-" * 200 + "\nslot value: {}\ntokens: {}\n".format(vv,  w_v) + "-" * 200)
+                print("-" * 200 + "\nslot value: ", vv, "\ntokens: ", w_v, "\n" + "-" * 200 + "\n")
                 for w in w_v: self.tokens[slot][w].append(vi)
