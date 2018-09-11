@@ -258,10 +258,6 @@ class E2ERLAgent:
             :return: p_tilde
             '''
             w = T.dot(idd,q.transpose()) # Pi x BH
-            # TODO: debug失败！
-            print("-" * 200 + "\nweighted entropy w: ")
-            theano.printing.Print('z2')(w)
-            print("-" * 200)
             u = p0[np.newaxis,:]*(q[:,unks].sum(axis=1)[:,np.newaxis]) # BH x Pi
             p_tilde = w.transpose()+u
             return entropy(p_tilde) # BH * 1
@@ -539,9 +535,6 @@ class E2ERLAgent:
         hi = [np.zeros((1,self.r_hid)).astype('float32') \
                 for s in dialog_config.inform_slots]
         pi = np.zeros((1,self.n_hid)).astype('float32')
-
-        # TODO: 模型训练过程中输入数据到底长什么样？
-        # print (i, t, a, r, d, ds, p, ph, hi)
 
         if verbose: print i, t, a, r, d, ds, p, ph, hi
         if regime=='RL':

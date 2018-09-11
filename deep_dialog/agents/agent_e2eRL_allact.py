@@ -70,10 +70,9 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         in_size = len(self.feat_extractor.grams) + len(dialog_config.inform_slots)
         slot_sizes = [self.movie_dict.lengths[s] for s in dialog_config.inform_slots]
         # TODO: 查看输入的数据
-        print ("grams: {}".format(self.feat_extractor.grams) + "\n" + "-" * 200)
-        print "slot_sizes: {}".format(slot_sizes)
-        self._init_model(in_size, out_size, slot_sizes, self.database, \
-                n_hid=n_hid, learning_rate_sl=lr, batch_size=batch, ment=ment, input_type=input_type, \
+        print ("-" * 200 + "\ngrams: {}\n".format(self.feat_extractor.grams) + "-" * 200)
+        self._init_model(in_size, out_size, slot_sizes, self.database,
+                n_hid=n_hid, learning_rate_sl=lr, batch_size=batch, ment=ment, input_type=input_type,
                 sl=sl, rl=rl)
         self._name = name
         if _reload: self.load_model(dialog_config.MODEL_PATH+self._name)
