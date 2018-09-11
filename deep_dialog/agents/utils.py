@@ -1,21 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from collections import Counter
 from deep_dialog import tools
-import numpy as np
-import time
 
 def standardize(arr):
     return arr
 
 def calc_entropies(state, q, db):
     '''
-
+    SL中计算熵的方式，跟RL中不一样！
     :param state:
-    :param q:
-    :param db:
-    :return:
+    :param q: table probability, (N,)
+    :param db: database
+    :return: 每个slot的熵
     '''
     entropies = {}
     for s,c in state.iteritems():

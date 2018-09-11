@@ -47,13 +47,26 @@ class S2SNLG:
             self.slots.append(line.rstrip())
 
     def generate(self, act, request_slots, inform_slots):
-        if all([r in self.slots for r in request_slots.keys()]) and \
-                all([i in self.slots for i in inform_slots.keys()]):
+        '''
+        生成自然语言回复，request和inform的slot name都在table的slots中使用NLG生成回复，否则使用模板生成回复
+        :param act: 用户action，分inform/deny/thanks
+        :param request_slots:
+        :param inform_slots:
+        :return: NL sentence
+        '''
+        if all([r in self.slots for r in request_slots.keys()]) and all([i in self.slots for i in inform_slots.keys()]):
             return self.generate_from_nlg(act, request_slots, inform_slots)
         else:
             return self.generate_from_template(act, request_slots, inform_slots)
 
     def generate_from_nlg(self, act, request_slots, inform_slots):
+        '''
+        生成NL sentence
+        :param act:
+        :param request_slots:
+        :param inform_slots:
+        :return:
+        '''
         act_string = act + '('
         for s,v in request_slots.iteritems():
             act_string += '%s=%s;' % (s,v) if v!='UNK' else '%s;' %s

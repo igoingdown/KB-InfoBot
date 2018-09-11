@@ -53,8 +53,8 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         :param pol_start: 将RL应用于policy network的iteration下限
         :param lr:learning rate, 对RL和SL有不同的设置，而且SL的learning rate会逐渐变小
         :param N: featN, N-gram's N, used in simple rule feature extraction，一般是2
-        :param tr: database entropy's threshold to inform
-        :param ts: slot entropy's threshold to request
+        :param tr: database entropy's threshold to inform，用于基于规则的action选择
+        :param ts: slot entropy's threshold to request，用于基于规则的action，如果有任意一个slot不够确定，就继续提问
         :param max_req: Maximum requests allowed for per slot
         :param frac: Ratio to initial slot entropy, 一个slot的entropy如果低于这个下限，这个slot就再也不会被问到(request)
         :param name:
@@ -159,7 +159,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         self.state['inputs'] = []
         self.state['actions'] = []
         self.state['rewards'] = []
-        self.state['indices'] = []
+        self.state['indices'] = []   # 保存inform action之后的概率前几名
         self.state['ptargets'] = []
         self.state['phitargets'] = []
         self.state['hid_state'] = [np.zeros((1,self.r_hid)).astype('float32') \
@@ -171,19 +171,18 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         get next action based on rules
         :param user_action: 用户输入之后，新的state
         :param verbose: 是否打印模型运行过程产生的log，是否开启唠叨模式
-        :return: 产生后续的对话状态
+        :return: 返回action的dict里面有其他的参数，包括diaact,request_slots,target,p和q等
         '''
         self.state['turn'] += 1
 
-        p_vector = np.zeros((self.in_size,)).astype('float32')
-        p_vector[:self.feat_extractor.n] = self.feat_extractor.featurize( \
-                user_action['nl_sentence'])
+        p_vector = np.zeros((self.in_size,)).astype('float32')   # （|Grams|+|Slots|, )
+        p_vector[:self.feat_extractor.n] = self.feat_extractor.featurize(user_action['nl_sentence'])
         if self.state['turn']>1:
             pr_act = self.state['prevact'].split('@')
             assert pr_act[0]!='inform', 'Agent called after informing!'
             act_id = dialog_config.inform_slots.index(pr_act[1])
             p_vector[self.feat_extractor.n+act_id] = 1
-        p_vector = np.expand_dims(np.expand_dims(p_vector, axis=0), axis=0)
+        p_vector = np.expand_dims(np.expand_dims(p_vector, axis=0), axis=0) # (1, 1, |Grams|+|Slots|)
         p_vector = standardize(p_vector)
 
         p_targets = []
@@ -199,7 +198,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
             for i,s in enumerate(dialog_config.inform_slots):
                 pp[i] = H_slots[s]
             pp[-1] = H_db
-            pp = np.expand_dims(np.expand_dims(pp, axis=0), axis=0)
+            pp = np.expand_dims(np.expand_dims(pp, axis=0), axis=0) # (1, 1, |Slots|)
             _, action = self._rule_act(pp, db_probs)
             act, _, p_out, hid_out, p_db = self._prob_act(p_vector, mode='sample')
             for s in dialog_config.inform_slots:
@@ -213,18 +212,26 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
             if self.training: act, action, p_out, hid_out, db_probs = self._prob_act(p_vector, mode='sample')
             else: act, action, p_out, hid_out, db_probs = self._prob_act(p_vector, mode='max')
 
-        self._state_update(act, p_vector, action, user_action['reward'], p_out, hid_out, p_targets, \
-                phi_targets)
-
+        self._state_update(act, p_vector, action, user_action['reward'], p_out, hid_out, p_targets, phi_targets)
         act['posterior'] = db_probs
-
         return act
 
     def _state_update(self, act, p, action, rew, p_out, h_out, p_t, phi_t):
+        '''
+        每轮对话结束后，将最新的对话状态填充到列表或者更新之前存储的上一次的状态
+        :param act: dict，保存了action的细节
+        :param p: ??
+        :param action: 本轮的高分action或者抽样得到的action
+        :param rew: reward
+        :param p_out: policy网络的RNN输出，可以作为下一轮的RNN输入
+        :param h_out: BT网络RNN输出，可以作为下一次RNN的输入
+        :param p_t: 手工计算出的p
+        :param phi_t: 手工计算出的q
+        :return: None
+        '''
         if act['diaact']=='inform':
             self.state['prevact'] = 'inform@inform'
-            self.state['indices'] = np.asarray(act['target'][:dialog_config.SUCCESS_MAX_RANK], \
-                    dtype='int32')
+            self.state['indices'] = np.asarray(act['target'][:dialog_config.SUCCESS_MAX_RANK], dtype='int32')
         else:
             req = act['request_slots'].keys()[0]
             self.state['prevact'] = 'request@%s' %req
@@ -238,19 +245,23 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         self.state['phitargets'].append(phi_t)
 
     def _prob_act(self, p, mode='sample'):
+        '''
+        输入policy网络，policy的输出
+        :param p: 输入到agent模型的input_var!
+        :param mode: "sample"表示训练，"max"表示测试
+        :return: 神经网络预测的aciton，policy和BT的GRU的隐状态输出和用户对于那些行感兴趣
+        '''
         act = {}
         act['diaact'] = 'UNK'
         act['request_slots'] = {}
         act['target'] = []
 
-        action, db_sample, db_probs, p_out, h_out, pv, phiv = self.act(p, self.state['pol_state'], \
-                self.state['hid_state'], mode=mode)
+        action, db_sample, db_probs, p_out, h_out, pv, phiv = self.act(p, self.state['pol_state'], self.state['hid_state'], mode=mode)
         if action==self.out_size-1:
             act['diaact'] = 'inform'
             act['target'] = [0]*self.state['database'].N
             act['target'][:dialog_config.SUCCESS_MAX_RANK] = db_sample
-            act['target'][dialog_config.SUCCESS_MAX_RANK:] = list(set(range(self.state['database'].N))\
-                    - set(db_sample))
+            act['target'][dialog_config.SUCCESS_MAX_RANK:] = list(set(range(self.state['database'].N)) - set(db_sample))
         else:
             act['diaact'] = 'request'
             s = dialog_config.inform_slots[action]
@@ -260,12 +271,19 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         return act, action, p_out, h_out, db_probs
 
     def _rule_act(self, p, db_probs):
+        '''
+        基于规则选择action，主要是根据熵的限度和每个slot被询问的次数，优先考虑整个table的entropy，然后再考虑每个slot的entropy和询问次数
+        :param p: (B, H, |Slots|)
+        :param db_probs: (N,)
+        :return: 选出的action，分request和inform，request需要指定具体的slot，inform不需要，还有act记录action的数据结构
+        '''
         act = {}
         act['diaact'] = 'UNK'
         act['request_slots'] = {}
         act['target'] = []
 
         if p[0,0,-1] < self.tr:
+            # database的熵小于一定的值，直接告知用户答案即可，不许要进行其他对话
             # agent reasonable confident, inform
             act['diaact'] = 'inform'
             act['target'] = self._inform(db_probs)
@@ -277,6 +295,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
             for (s,h) in sorted_entropies:
                 if H_slots[s]<self.frac*self.state['init_entropy'][s] or H_slots[s]<self.ts or \
                         self.state['num_requests'][s] >= self.max_req:
+                    # 如果一个slot的的entropy小于一定的初始程度的一部分或小于slot的entropy下限或询问次数大于一定程度，则跳过
                     continue
                 act['diaact'] = 'request'
                 act['request_slots'][s] = 'UNK'
@@ -291,6 +310,11 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         return act, action
 
     def terminate_episode(self, user_action):
+        '''
+        当用户输入后状态变为终结时，结束本次对话，输出答案
+        :param user_action: 输入输入之后的对话状态
+        :return: None
+        '''
         assert self.state['turn'] <= self.max_turn, "More turn than MAX_TURN!!"
         total_reward = aggregate_rewards(self.state['rewards']+[user_action['reward']],self.discount)
         
@@ -317,8 +341,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
                     p_targets[i][t,:] = self.state['ptargets'][t][i]
                     phi_targets[i][t] = self.state['phitargets'][t][i]
 
-        self.add_to_pool(inp, turnmask, actmask, total_reward, db_index, db_switch, p_targets, \
-                phi_targets)
+        self.add_to_pool(inp, turnmask, actmask, total_reward, db_index, db_switch, p_targets, phi_targets)
         self.recent_rewards.append(total_reward)
         self.recent_turns.append(self.state['turn'])
         if self.state['turn'] == self.max_turn: self.recent_successes.append(0)

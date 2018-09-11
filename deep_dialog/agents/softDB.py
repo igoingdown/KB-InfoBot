@@ -8,6 +8,11 @@ import numpy as np
 
 class SoftDB:
     def _inform(self, probs):
+        '''
+        确认不需要再进行request时，直接将每行感兴趣的程度降序排列输出
+        :param probs:
+        :return: 根据感兴趣程度降序排列的行号
+        '''
         return np.argsort(probs)[::-1].tolist()
 
     def _check_db(self):

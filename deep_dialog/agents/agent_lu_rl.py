@@ -26,10 +26,16 @@ import cPickle as pkl
 EPS = 1e-10
 
 def categorical_sample(probs, mode='sample'):
+    '''
+    从一个多项分布中进行最大采样或者随机采样，训练模式随机采样，测试模式最大采样
+    :param probs: action的概率分布
+    :param mode: "sample"表示训练，"max"表示测试,
+    :return: 返回抽样得到的元素的index
+    '''
     if mode=='max':
         return np.argmax(probs)
     else:
-        x = np.random.uniform()
+        x = np.random.uniform() # 从[0,1)区间上按均匀分布随机采样出一个值
         s = probs[0]
         i = 0
         while s<x:
@@ -42,9 +48,17 @@ def categorical_sample(probs, mode='sample'):
         return i
 
 def ordered_sample(probs, N, mode='sample'):
+    '''
+    顺序进行N次抽样，不放回
+    :param probs: 概率分布
+    :param N: 抽样次数
+    :param mode: "sample"表示训练，"max"表示测试
+    :return: 返回抽样得到的index列表
+    '''
     if mode=='max':
-        return np.argsort(probs)[::-1][:N]
+        return np.argsort(probs)[::-1][:N] # 将index按值降序排列后取前N个
     else:
+        # 随机多项抽样，不放回
         p = np.copy(probs)
         pop = range(len(probs))
         sample = []
@@ -57,6 +71,12 @@ def ordered_sample(probs, N, mode='sample'):
         return sample
 
 def aggregate_rewards(rewards,discount):
+    '''
+    每一轮有个reward，对reward进行衰减处理
+    :param rewards: 1到t轮每轮的reward
+    :param discount: 衰减率
+    :return: 衰变后的总的reward加和
+    '''
     running_add = 0.
     for t in xrange(1,len(rewards)):
         running_add += rewards[t]*discount**(t-1)
@@ -140,7 +160,7 @@ class E2ERLAgent:
 
         # belief tracking
         l_in = L.InputLayer(shape=(None,None,self.in_size), input_var=input_var)
-        # input_var: B * H * (GRAM_SIZE + INFORM_SLOTS)
+        # input_var: (B, H, GRAM_SIZE + INFORM_SLOTS)
         p_vars = []
         pu_vars = []
         phi_vars = []
@@ -156,11 +176,11 @@ class E2ERLAgent:
             hid_state_init = T.fmatrix('h')
             l_rnn = L.GRULayer(l_in, self.r_hid, hid_init=hid_state_init,  \
                     mask_input=l_mask_in,
-                    grad_clipping=10.) # B x H x D
+                    grad_clipping=10.) # (B,H,D)
             # D = GRAM_SIZE + INFORM_SLOTS，即embedding size
             # H表示history size, 是一个MAX_TUR维，所以需要一个turn mask！
             l_b_in = L.ReshapeLayer(l_rnn, 
-                    (input_var.shape[0]*input_var.shape[1], self.r_hid)) # BH x D
+                    (input_var.shape[0]*input_var.shape[1], self.r_hid)) # (BH,D)
 
             # print("input var type: {}".format(type(input_var)))
             # print ("input var evaluation: {}".format(input_var.tag.test_value))
@@ -176,9 +196,9 @@ class E2ERLAgent:
             phi_t = T.reshape(phi_targ, (phi_targ.shape[0]*phi_targ.shape[1], 1))
 
             l_b = L.DenseLayer(l_b_in, self.slot_sizes[i], 
-                    nonlinearity=lasagne.nonlinearities.softmax)     # BH * |V|
+                    nonlinearity=lasagne.nonlinearities.softmax)     # (BH,|V|)
             l_phi = L.DenseLayer(l_b_in, 1, 
-                    nonlinearity=lasagne.nonlinearities.sigmoid)     # BH * 1
+                    nonlinearity=lasagne.nonlinearities.sigmoid)     # (BH,1)
 
             phi = T.clip(L.get_output(l_phi), 0.01, 0.99)
             p = L.get_output(l_b)
@@ -246,7 +266,7 @@ class E2ERLAgent:
             p_tilde = w.transpose()+u
             return entropy(p_tilde) # BH * 1
 
-        p_db = check_db(pu_vars, phi_vars, T_var, N_var) # BH x T.shape[0]
+        p_db = check_db(pu_vars, phi_vars, T_var, N_var) # BH x N
         
         if input_type=='entropy':
             # 计算H，对特征进行降维
@@ -281,7 +301,7 @@ class E2ERLAgent:
         pol_out = L.get_output(l_pol_rnn)[:,-1,:] # B * D
         l_den_in = L.ReshapeLayer(l_pol_rnn, 
                 (turn_mask.shape[0]*turn_mask.shape[1], n_hid)) # BH x D
-        l_out = L.DenseLayer(l_den_in, self.out_size, \
+        l_out = L.DenseLayer(l_den_in, self.out_size,
                 nonlinearity=lasagne.nonlinearities.softmax) # BH x A
         # A 表示Action sample size！
 
@@ -418,7 +438,15 @@ class E2ERLAgent:
         return self.obj_fn(inp, tur, act, rew, db, dbs, pin, *hin)
 
     def act(self, inp, pin, hin, mode='sample'):
-        tur = np.ones((inp.shape[0],inp.shape[1])).astype('int8')
+        '''
+        将输入数据到模型中，为训练和测试分别抽样得到后续的action和更新的p，q，RNN的隐状态
+        :param inp: input，原始特征，(B, H, |Grams + slots|)
+        :param pin: current policy state
+        :param hin: current hidden state
+        :param mode: 训练时设为"sample"，测试时设为"max"
+        :return:
+        '''
+        tur = np.ones((inp.shape[0],inp.shape[1])).astype('int8') # (B,H)
         outs = self.act_fn(inp, tur, pin, *hin)
         act_p, db_p, p_out = outs[0], outs[1], outs[2]
         n_slots = len(dialog_config.inform_slots)

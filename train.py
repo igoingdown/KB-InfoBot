@@ -207,9 +207,9 @@ def eval_agent(ite, max_perf, best=False):
         all_success[i] = 1 if current_success else 0
         all_turns[i] = t
     curr_perf = np.mean(all_rewards)
-    print("EVAL {}: {} / {} reward {} / {} success rate {} / {} turns".format(ite, \
-            curr_perf, np.std(all_rewards)/nn, \
-            np.mean(all_success), np.std(all_success)/nn, \
+    print("EVAL {}: {} / {} reward {} / {} success rate {} / {} turns".format(ite,
+            curr_perf, np.std(all_rewards)/nn,
+            np.mean(all_success), np.std(all_success)/nn,
             np.mean(all_turns), np.std(all_turns)/nn))
     if curr_perf>max_perf and not best:
         max_perf=curr_perf

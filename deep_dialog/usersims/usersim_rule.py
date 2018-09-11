@@ -34,7 +34,7 @@ class RuleSimulator:
         :param movie_dict:
         :param act_set:
         :param slot_set:
-        :param start_set: ??
+        :param start_set:
         :param max_turn: max turn in one dialog episode, 20 by default
         :param nlg: natural language generator
         :param err_prob: the probability of the user simulator corrupting a slot value
@@ -141,16 +141,13 @@ class RuleSimulator:
         打印用户的goal
         :return:
         '''
-        print 'User target = ', ', '.join(['%s:%s' %(s,v) for s,v in \
-                zip(['movie']+self.database.slots, \
-                [self.database.labels[self.goal['target']]] + \
-                self.database.tuples[self.goal['target']])])
+        print 'User target = ', ', '.join(['%s:%s' %(s,v) for s,v in zip(['movie']+self.database.slots, [self.database.labels[self.goal['target']]] + self.database.tuples[self.goal['target']])])
         print 'User information = ', ', '.join(['%s:%s' %(s,v) for s,v in \
                 self.goal['inform_slots'].iteritems() if v is not None]), '\n'
 
     def initialize_episode(self):
         '''
-        initialization，先采样一条记录作为用户开启本次对话(episode)时想要的答案，然后随机采样生成用户的初始输入(action)
+        initialization，先采样一条记录作为用户开启本次对话(episode)时想要的答案，然后随机采样生成用户的初始输入(action)，并初始化用户状态。
         :return: 返回用户开始的action
         '''
         self._sample_goal()
@@ -158,12 +155,16 @@ class RuleSimulator:
         # first action
         episode_over, user_action = self._sample_action()
         assert (episode_over != 1),' but we just started'
+        # TODO: 查看一下用户state所包含的内容
+        print("-" * 200 + "\nuser initial state: {}\n".format(self.state) + "-" * 200)
         return user_action
 
     def next(self, state):
         '''
-        用户根据系统状态决定什么样的输入，输入之后修改对话状态
-        :param state: sys_action
+        用户根据agent的输出决定什么样用户采取什么样的操作，操作就是修改对话状态。
+        如果agent选择的action是inform，则根据目标记录的最终排序确定对话成功还是失败，并且分配不同的reward
+        如果agent选择action是request，
+        :param state: sys_action，dict，包括对话轮次turn,request slots, p, q，对话动作diaact
         :return: 新的对话状态，即用户对话状态
         '''
         self.state['turn'] += 1
@@ -184,8 +185,7 @@ class RuleSimulator:
                 episode_over = True
                 goal_rank = state['target'].index(self.goal['target'])
                 if goal_rank < dialog_config.SUCCESS_MAX_RANK:
-                    reward = dialog_config.SUCCESS_DIALOG_REWARD*\
-                            (1.-float(goal_rank)/dialog_config.SUCCESS_MAX_RANK)
+                    reward = dialog_config.SUCCESS_DIALOG_REWARD * (1.-float(goal_rank)/dialog_config.SUCCESS_MAX_RANK)
                     self.state['diaact'] = 'thanks'
                 else:
                     reward = dialog_config.FAILED_DIALOG_REWARD
@@ -202,8 +202,7 @@ class RuleSimulator:
         if not episode_over:
             self.corrupt()
 
-        sent = self.nlg.generate(self.state['diaact'],self.state['request_slots'],
-                self.state['inform_slots_noisy']) if self.nlg is not None else ''
+        sent = self.nlg.generate(self.state['diaact'],self.state['request_slots'], self.state['inform_slots_noisy']) if self.nlg is not None else ''
         self.state['nl_sentence'] = sent
         self.state['episode_over'] = episode_over
         self.state['reward'] = reward
