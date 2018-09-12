@@ -39,7 +39,7 @@ class DialogManager:
 
     def next_turn(self):
         # TODO: 为了查看对话进程，先开启唠叨模式
-        self.verbose = True
+        # self.verbose = True
         if self.verbose:
             print 'Turn', self.user_action['turn'], 'user action:', self.user_action['diaact'], \
                     '\t', 'inform slots:', self.user_action['inform_slots']
@@ -50,7 +50,7 @@ class DialogManager:
         self.sys_actions['turn'] = self.user_action['turn'] + 1
         if self.verbose:
             print("Turn %d sys action: %s, request slots: %s" % \
-                    (self.sys_actions['turn'], self.sys_actions['diaact'], \
+                    (self.sys_actions['turn'], self.sys_actions['diaact'],
                      self.sys_actions['request_slots']) + '\n')
 
         self.user_action, episode_over, reward = self.user.next(self.sys_actions)
@@ -75,7 +75,7 @@ class DialogManager:
                             out.append('%s'%val)
                     print('\t'.join([o.encode('latin-1', 'replace') for o in out]))
         # TODO: 在进行其他操作之前，先将唠叨模式关闭
-        self.verbose = False
+        # self.verbose = False
         return (episode_over, reward, self.user_action, self.sys_actions)
 
     def check_db(self):

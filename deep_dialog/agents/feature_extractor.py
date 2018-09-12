@@ -23,8 +23,6 @@ class FeatureExtractor:
             f = open(save_path, 'rb')
             self.grams = pkl.load(f)
             self.n = pkl.load(f)
-            # TODO: 为什么一个file可以使用pickle进行多次load？！这是什么操作？
-            print("-" * 200 + "\ngrams: {}\nn: {}\n".format(self.grams, self.n) + "-" * 200)
             f.close()
         else:
             self.grams = {}

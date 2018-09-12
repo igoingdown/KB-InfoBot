@@ -30,12 +30,10 @@ class MovieDict:
 
     def _build_token_index(self):
         self.tokens = {}
+        # tokens的结构:{slot_name:{word_token: [slot value IDs]}}
         for slot,vals in self.dict.iteritems():
             print "db slot: {}\nslot values: {}".format(slot, vals)
             self.tokens[slot] = defaultdict(list)
             for vi,vv in enumerate(vals):
                 w_v = to_tokens(vv)
-                # TODO: 这些token是什么？这应该不是N-Gram的token吧！
-
-                print("-" * 200 + "\nslot value: ", vv, "\ntokens: ", w_v, "\n" + "-" * 200 + "\n")
                 for w in w_v: self.tokens[slot][w].append(vi)
