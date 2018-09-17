@@ -18,13 +18,13 @@ class FeatureExtractor:
         self.N = N
         save_path = db_path.rsplit('/',1)[0] + '/fdict_%d.p'%N
         if os.path.isfile(save_path):
-            # TODO: 查看feature extractor是怎么工作的
-            print("-" * 200 + "\nsave path: {}".format(save_path) + "-" * 200)
+            # load pre-dumped grams and N from file
             f = open(save_path, 'rb')
             self.grams = pkl.load(f)
             self.n = pkl.load(f)
             f.close()
         else:
+            # if there doesn't exist any pre-dumped file, generate grams from corpus or database text file.
             self.grams = {}
             self.n = 0
             if corpus_path is not None: self._build_vocab_from_corpus(corpus_path)
@@ -36,9 +36,14 @@ class FeatureExtractor:
         print 'Vocab Size = %d' %self.n
 
     def _build_vocab_from_db(self, corpus):
+        '''
+        根据database构造全局vocabulary存到grams中，N-Gram实际上包括了全部[1,N]-Grams
+        :param corpus: database文本文件path
+        :return: None
+        '''
         try:
             # TODO: 查看feature extractor是怎么工作的，这是理解belief tracker的关键
-            print ("-" * 200 + "\ndb path: {}\n".format(corpus) + "-" * 200)
+            print ("-" * 200 + "\nbuild vocab from db, db path: {}\n".format(corpus) + "-" * 200)
             f = io.open(corpus, 'r')
             for line in f:
                 elements = line.rstrip().split('\t')[1:]
@@ -68,10 +73,15 @@ class FeatureExtractor:
             f.close()
 
     def _build_vocab_from_corpus(self, corpus):
+        '''
+        根据对话文本构造全局vocabulary存到grams中，N-Gram实际上包括了全部[1,N]-Grams
+        :param corpus: 对话文本文件path
+        :return: None
+        '''
         if not os.path.isfile(corpus): return
         try:
             # TODO: 查看feature extractor是怎么工作的，这是理解belief tracker的关键
-            print ("-" * 200 + "\ncorpus path: {}\n".format(corpus) + "-" * 200)
+            print ("-" * 200 + "\nbuild vocab from corpus, corpus path: {}\n".format(corpus) + "-" * 200)
             f = io.open(corpus, 'r')
             for line in f:
                 tokens = to_tokens(line.rstrip())
@@ -97,6 +107,11 @@ class FeatureExtractor:
             f.close()
 
     def featurize(self, text):
+        '''
+        基于N-Gram的方式构造文本text中的特征
+        :param text: 自然语言文本
+        :return: 长度为|Grams|的向量，向量中的每个值表示该Gram的数量
+        '''
         vec = np.zeros((len(self.grams),)).astype('float32')
         tokens = to_tokens(text)
         for i in range(len(tokens)):

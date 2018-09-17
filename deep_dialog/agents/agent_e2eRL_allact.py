@@ -51,7 +51,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         :param sl: 指定 supervised learning 应用于哪个网络, 可以用于belief tracking，policy network或者两者都使用(e2e，默认设定)
         :param rl: 指定reinforcement learning 应用于哪个网络，可以用于belief tracking, policy network或者两者都用(e2e，默认设定)
         :param pol_start: 将RL应用于policy network的iteration下限
-        :param lr:learning rate, 对RL和SL有不同的设置，而且SL的learning rate会逐渐变小
+        :param lr:learning rate, 对RL和SL有不同的设置，而且SL的learning rate不变，而RL的learning rate逐渐变小
         :param N: featN, N-gram's N, used in simple rule feature extraction，一般是2
         :param tr: database entropy's threshold to inform，用于基于规则的action选择
         :param ts: slot entropy's threshold to request，用于基于规则的action，如果有任意一个slot不够确定，就继续提问
@@ -78,7 +78,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         self._init_experience_pool(batch)
         self.episode_count = 0
 
-        # TODO:为什么要记录recent的reward，loss？
+        # 记录recent的reward，loss等监控模型的训练进程, 在_print_progress函数中有用到。
         self.recent_rewards = deque([], 1000)
         self.recent_successes = deque([], 1000)
         self.recent_turns = deque([], 1000)
@@ -106,19 +106,20 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
             tot += 1
         if len(args)>0:
             print 'Update %d. Avg turns = %.2f . Avg Reward = %.2f . Success Rate = %.2f . Fail Rate = %.2f . Incomplete Rate = %.2f . Loss = %.3f . Time = %.2f' % \
-                    (self.num_updates, avg_turn, avg_ret, \
+                    (self.num_updates, avg_turn, avg_ret,
                     float(n_suc)/tot, float(n_fail)/tot, float(n_inc)/tot, avg_loss, te)
             #print 'kl loss = {}'.format(args[0])
             #print 'x_loss = {}'.format(args[1])
         else:
             print 'Update %d. Avg turns = %.2f . Avg Reward = %.2f . Success Rate = %.2f . Fail Rate = %.2f . Incomplete Rate = %.2f . Loss = %.3f . Time = %.2f' % \
-                    (self.num_updates, avg_turn, avg_ret, \
+                    (self.num_updates, avg_turn, avg_ret,
                     float(n_suc)/tot, float(n_fail)/tot, float(n_inc)/tot, avg_loss, te)
 
     def initialize_episode(self):
         '''
+        每次开启一次新的对话(episode)之前，在这里更新agent的参数
         在user simulator初始化之后，根据对话状态(user_action)初始化agent
-        :return:
+        :return: None
         '''
         self.episode_count += 1
         if self.training and self.episode_count%self.batch_size==0:
@@ -129,6 +130,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
                 # 初始条件下使用SL方式更新参数
                 all_loss = self.update(regime='SL')
                 loss = all_loss[0]
+                # loss是BT的loss与action的loss的和
                 kl_loss = all_loss[1:len(dialog_config.inform_slots)+1]
                 # kl_loss:每个slot的模型预测p和手工计算的p_target的KL散度
                 x_loss = all_loss[len(dialog_config.inform_slots)+1:]
@@ -308,7 +310,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
 
     def terminate_episode(self, user_action):
         '''
-        当用户输入后状态变为终结时，结束本次对话，输出答案
+        当用户输入后状态变为终结时，结束本episode，将state中存储每个turn的输入信息转移到pool中，供update函数更新agent的参数
         :param user_action: 输入输入之后的对话状态
         :return: None
         '''

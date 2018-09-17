@@ -85,19 +85,22 @@ from deep_dialog.usersims import RuleSimulator, TemplateNLG, S2SNLG
 from deep_dialog.objects import SlotReader
 from deep_dialog import dialog_config
 
-# TODO: 读取预先定义好的act类型，并编号
+# 读取预先定义好的act类型，并编号
 act_set = DictReader()
 act_set.load_dict_from_file(params['act_set'])
 
-# TODO: 读取预先定义的所有可能的槽，不同规模的dataset的槽基本相同, 以下7个是imdb-M的槽
+# 读取每个database的slot，预先定义的所有可能的槽，不同规模的dataset的槽基本相同, 以下7个是imdb-M的槽
 # moviename actor critic_rating genre mpaa_rating release_year director
+# 区分头实体和非头实体，头实体只有moviename，其余均为非头实体
 slot_set = SlotReader(slot_path)
 
-# TODO: 读取dict_path为每个slot构建不同的dict，方面后续的计算
+# 读取dict_path中已经为每个slot构建的dict
+# TODO: 中文环境也许要先dump出来一份dict
 # dict_path中保存的是数据集上每个槽到槽中值的list的映射，是一个2进制文件，必须通过2进制读取
+# TODO: 是dict的value是list还是set？
 movie_kb = MovieDict(dict_path)
-# movie_kb实际包含了数据集上每个槽到槽中值的set的映射、每个槽到槽中值set长度(Missing Value ID)的映射
-# 以及每个slot下不同的token(不含停止词的单词)到槽值的index的映射
+# movie_kb实际包含了数据集上每个slot到slot value set的映射、每个slot到slot value set长度(Missing Value ID)的映射
+# 以及每个slot下不同的token(不含停止词的单词)到slot value ID的映射
 
 # 分别构造全db和按比例缺失db
 db_full = Database(db_full_path, movie_kb, name=params['dataset'])
@@ -108,7 +111,7 @@ nlg = S2SNLG(template_path, params['nlg_slots_path'], params['nlg_model_path'],
         params['nlg_temp'])
 
 # 构造用户模拟器
-user_sim = RuleSimulator(movie_kb, act_set, slot_set, None, max_turn, nlg, err_prob, db_full, \
+user_sim = RuleSimulator(movie_kb, act_set, slot_set, None, max_turn, nlg, err_prob, db_full,
         1.-dk_prob, sub_prob=params['sub_prob'], max_first_turn=params['max_first_turn'])
 
 # 根据参数agent_type构建用于训练的agent和用于evaluate的agent
@@ -221,7 +224,7 @@ mp = -10.
 for i in range(N):
     if i%(EVALF*params['batch'])==0:
         mp = eval_agent(i,mp)
-    utt = dialog_manager.initialize_episode()
+    utt = dialog_manager.initialize_episode()  # 在这一步更新模型参数
     while(True):
         episode_over, reward, utt, sact = dialog_manager.next_turn()
         if episode_over:

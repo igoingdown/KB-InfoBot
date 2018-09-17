@@ -19,7 +19,7 @@ class DialogManager:
         :param db_full: 无missing value的database(table)
         :param db_inc: 强行加入20% missing value的database(table)
         :param movie_kb: knowledge base
-        :param verbose: 决定是否打印程序运行过程中产生的冗余信息，话痨模式和哑巴模式
+        :param verbose: 决定是否打印程序运行过程中产生的冗余信息，分话痨模式和哑巴模式
         '''
         self.agent = agent
         self.user = user

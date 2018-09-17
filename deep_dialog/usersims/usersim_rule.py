@@ -101,7 +101,7 @@ class RuleSimulator:
         :return: 修改user simulator对象的goal即可，不必返回
         '''
         if self.start_set is not None:
-            self.goal = random.choice(self.start_set)  # sample user's goal from the dataset
+            self.goal = random.choice(self.start_set)  # sample user's goal from the start set
         else:
             # sample a DB record as target
             self.goal = {}
@@ -115,7 +115,7 @@ class RuleSimulator:
 
             care_about = random.sample(known_slots, int(self.dk_prob*len(known_slots)))
             # 从数据库中已知slot的value的known_slots中随机抽取一部分座位用户感兴趣的care_about
-
+            # TODO: known slots, inform slots, care about, don't know slots都是什么含义？各有什么作用？
             # 填充target的相关slot到goal的inform_slots中，用户关心的slot填充的一定是正确的，但是其余的都不填充
             for i,s in enumerate(self.database.slots):
                 if s not in dialog_config.inform_slots: continue
@@ -155,7 +155,7 @@ class RuleSimulator:
         # first action
         episode_over, user_action = self._sample_action()
         assert (episode_over != 1),' but we just started'
-        # TODO: 查看一下用户state所包含的内容
+        # TODO: 查看用户采取初始化的action之后的state所包含的内容
         print("-" * 200 + "\nuser initial state: {}\n".format(self.state) + "-" * 200)
         return user_action
 
