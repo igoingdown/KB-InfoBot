@@ -31,13 +31,7 @@ def crawl():
         print page_addresses
         for page_address in page_addresses:
             movie_records += parse_page(page_address)
-    for movie in movie_records:
-        print "\t".join([movie.movie_name, movie.actor, movie.rating, movie.genre,
-                         movie.mpaa_rating, movie.release_year, movie.director])
-    # with open("tmp.txt", "wb") as f:
-    #     for movie in movie_records:
-    #         f.write("\t".join([movie.movie_name, movie.actor, movie.rating, movie.genre,
-    #                          movie.mpaa_rating, movie.release_year, movie.director]))
+    save_data(movie_records, "data/raw_db.txt")
 
 def parse_page(address):
     print address
@@ -55,21 +49,28 @@ def parse_page(address):
                 imdb_req = requests.get(address["href"])
                 imdb_soup = BeautifulSoup(imdb_req.text, "lxml")
                 movie_record.rating = imdb_soup.find_all("div", "ratingValue")[0].text.strip().split("/")[0].strip()
-                movie_record.mpaa_rating = imdb_soup.find_all("div", "subtext")[0].text.strip().split("|")[0].strip()
+                mpaa_rating = imdb_soup.find_all("div", "subtext")[0].text.strip().split("|")[0].strip()
+                if u"h" in mpaa_rating or u'min' in mpaa_rating or u'Ban' in mpaa_rating:
+                    movie_record.mpaa_rating = u'None'
+                else:
+                    movie_record.mpaa_rating = mpaa_rating
         info_list = detail_soup.find_all("div", "info")
         for info in info_list:
-            print info.text
+            roles =[x.text for x in info.find_all("span", "role")]
+            names =[x.text for x in info.find_all("span", "name")]
+            for role, name in zip(roles, names):
+                print role, name
+            if len(roles) > 0 and u"导演" in roles[0] and movie_record.director == "":
+                movie_record.director = names[0].strip()
+            if len(roles) > 0 and (u"饰" in roles[0] or u"配" in roles[0] or u'配音' in roles[0] or u'演员' in roles[0] or u'自己' in roles[0]) and movie_record.actor == "":
+                movie_record.actor = names[0].strip()
         for intro in item.find_all("p")[0].text.split("\n"):
             intro = intro.strip()
-            directors = re.findall(ur'导演: .*? ', intro)
-            actors = re.findall(ur"主演: .*? ", intro)
             release_year = re.findall(ur'^\d+', intro)
-            if len(directors) > 0:
-                movie_record.director = directors[0].split(" ")[1]
-            if len(actors) > 0:
-                movie_record.actor = actors[0].split(" ")[1]
             if len(release_year) > 0:
                 movie_record.release_year = release_year[0]
+                if len(movie_record.release_year) > 4:
+                    movie_record.release_year = movie_record.release_year[:4]
             year_locality_genre = intro.split("/")
             if len(year_locality_genre) > 2:
                 genre = year_locality_genre[2].strip().split(" ")[0]
@@ -77,9 +78,14 @@ def parse_page(address):
         page_movies.append(movie_record)
     return page_movies
 
-def save_data():
-    pass
-
+def save_data(data, path):
+    with open(path, "wb") as f:
+        f.write(u'moviename	actor	critic_rating	genre	mpaa_rating	release_year	director\n')
+        for movie in data:
+            str = u"\t".join([movie.movie_name, movie.actor, movie.rating, movie.genre,
+                             movie.mpaa_rating, movie.release_year, movie.director])
+            str += u'\n'
+            f.write(str.encode("utf-8"))
 
 def load_data():
     pass

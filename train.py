@@ -72,10 +72,17 @@ N = params['N']
 _reload = bool(params['reload'])
 
 datadir = './data/' + params['dataset']
-db_full_path = datadir + '/db.txt'
-db_inc_path = datadir + '/incomplete_db_%.2f.txt' %params['unk']
-dict_path = datadir + '/dicts.json'
 slot_path = datadir + '/slot_set.txt'
+
+# TODO: 将英文DB替换为中文DB
+# db_full_path = datadir + '/db.txt'
+# db_inc_path = datadir + '/incomplete_db_%.2f.txt' %params['unk']
+# dict_path = datadir + '/dicts.json'
+db_full_path = datadir + '/chinese_db.txt'
+db_inc_path = datadir + '/incomplete_chinese_db_%.2f.txt' %params['unk']
+dict_path = datadir + '/chinese_dicts.json'
+
+# TODO: 是不是应该把corpus也要切换到中文？又要标注一波嘛？
 corpus_path = './data/corpora/' + params['dataset'] + '_corpus.txt'
 
 from deep_dialog.dialog_system import DialogManager, MovieDict, DictReader, Database
@@ -95,9 +102,8 @@ act_set.load_dict_from_file(params['act_set'])
 slot_set = SlotReader(slot_path)
 
 # 读取dict_path中已经为每个slot构建的dict
-# TODO: 中文环境也许要先dump出来一份dict
+# TODO: 中文环境的dict已经生成，使用豆瓣top250的数据
 # dict_path中保存的是数据集上每个槽到槽中值的list的映射，是一个2进制文件，必须通过2进制读取
-# TODO: 是dict的value是list还是set？
 movie_kb = MovieDict(dict_path)
 # movie_kb实际包含了数据集上每个slot到slot value set的映射、每个slot到slot value set长度(Missing Value ID)的映射
 # 以及每个slot下不同的token(不含停止词的单词)到slot value ID的映射
