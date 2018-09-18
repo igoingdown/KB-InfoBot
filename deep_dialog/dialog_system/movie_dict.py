@@ -34,7 +34,7 @@ class MovieDict:
         self.tokens = {}
         # tokens的结构:{slot_name:{word_token: [slot value IDs]}}
         for slot,vals in self.dict.iteritems():
-            print "db slot: {}\nslot values: {}".format(slot, vals)
+            print "db slot: {}\nslot values: {}".format(slot.encode("utf-8"), vals.encode("utf-8"))
             self.tokens[slot] = defaultdict(list)
             for vi,vv in enumerate(vals):
                 w_v = to_tokens(vv)
