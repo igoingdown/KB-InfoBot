@@ -51,7 +51,7 @@ def parse_page(address):
                 movie_record.rating = imdb_soup.find_all("div", "ratingValue")[0].text.strip().split("/")[0].strip()
                 mpaa_rating = imdb_soup.find_all("div", "subtext")[0].text.strip().split("|")[0].strip()
                 if u"h" in mpaa_rating or u'min' in mpaa_rating or u'Ban' in mpaa_rating:
-                    movie_record.mpaa_rating = u'None'
+                    movie_record.mpaa_rating = u'UNK'
                 else:
                     movie_record.mpaa_rating = mpaa_rating
         info_list = detail_soup.find_all("div", "info")
@@ -80,7 +80,7 @@ def parse_page(address):
 
 def save_data(data, path):
     with open(path, "wb") as f:
-        f.write(u'moviename	actor	critic_rating	genre	mpaa_rating	release_year	director\n')
+        f.write(u'片名	主演	评分	类别	评级	发行年份	导演\n')
         for movie in data:
             str = u"\t".join([movie.movie_name, movie.actor, movie.rating, movie.genre,
                              movie.mpaa_rating, movie.release_year, movie.director])

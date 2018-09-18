@@ -72,7 +72,9 @@ N = params['N']
 _reload = bool(params['reload'])
 
 datadir = './data/' + params['dataset']
-slot_path = datadir + '/slot_set.txt'
+# TODO: Slot set也要换成中文的
+# slot_path = datadir + '/slot_set.txt'
+slot_path = datadir + '/slot_set_chinese.txt'
 
 # TODO: 将英文DB替换为中文DB
 # db_full_path = datadir + '/db.txt'
@@ -82,8 +84,9 @@ db_full_path = datadir + '/chinese_db.txt'
 db_inc_path = datadir + '/incomplete_chinese_db_%.2f.txt' %params['unk']
 dict_path = datadir + '/chinese_dicts.json'
 
-# TODO: 是不是应该把corpus也要切换到中文？又要标注一波嘛？
-corpus_path = './data/corpora/' + params['dataset'] + '_corpus.txt'
+# TODO: 把corpus也要切换到中文。
+# corpus_path = './data/corpora/' + params['dataset'] + '_corpus.txt'
+corpus_path = './data/corpora/' + params['dataset'] + '_chinese_corpus.txt'
 
 from deep_dialog.dialog_system import DialogManager, MovieDict, DictReader, Database
 from deep_dialog.agents import AgentSimpleRLAllAct, AgentSimpleRLAllActHardDB

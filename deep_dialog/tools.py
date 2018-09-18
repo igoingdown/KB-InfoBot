@@ -11,6 +11,7 @@ from nltk.corpus import stopwords
 
 EXC = set(string.punctuation)
 
+# TODO: 这个函数可能需要改一下，因为改到中文之后，nltk不一定好用了
 def to_tokens(text):
     utt = ''.join(ch for ch in text if ch not in EXC)
     tokens = nltk.word_tokenize(utt.lower())

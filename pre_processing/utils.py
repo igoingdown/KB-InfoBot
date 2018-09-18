@@ -10,13 +10,13 @@ import random
 
 def generate_dict_from_db(db_path):
     d = {}
-    d[u'moviename'] = set()
-    d[u'actor'] = set()
-    d[u'critic_rating'] = set()
-    d[u'genre'] = set()
-    d[u'mpaa_rating'] = set()
-    d[u'release_year'] = set()
-    d[u'director'] = set()
+    d[u'片名'] = set()
+    d[u'主演'] = set()
+    d[u'评分'] = set()
+    d[u'类别'] = set()
+    d[u'评级'] = set()
+    d[u'发行年份'] = set()
+    d[u'导演'] = set()
 
     line_num = 0
     with open(db_path, "r") as f:
@@ -24,13 +24,13 @@ def generate_dict_from_db(db_path):
             if line_num != 0:
                 line = line.decode("utf-8")
                 movie_name,actor,critic_rating,genre,mpaa_rating,release_year,director = line.split("\t")
-                if movie_name != u"None": d[u'moviename'].add(movie_name.strip())
-                if actor != u"None": d[u'actor'].add(actor.strip())
-                if critic_rating != u"None": d[u'critic_rating'].add(critic_rating.strip())
-                if genre != u"None": d[u'genre'].add(genre.strip())
-                if mpaa_rating != u"None": d[u'mpaa_rating'].add(mpaa_rating.strip())
-                if release_year != u"None": d[u'release_year'].add(release_year.strip())
-                if director != u"None": d[u'director'].add(director.strip())
+                if movie_name != u"UNK": d[u'片名'].add(movie_name.strip())
+                if actor != u"UNK": d[u'主演'].add(actor.strip())
+                if critic_rating != u"UNK": d[u'评分'].add(critic_rating.strip())
+                if genre != u"UNK": d[u'类别'].add(genre.strip())
+                if mpaa_rating != u"UNK": d[u'评级'].add(mpaa_rating.strip())
+                if release_year != u"UNK": d[u'发行年份'].add(release_year.strip())
+                if director != u"UNK": d[u'导演'].add(director.strip())
             line_num += 1
     for key in d.keys():
         d[key] = list(d[key])
@@ -55,7 +55,7 @@ def generate_incomplete_database(db_path, incomplete_db_path):
                 if line_num != 0:
                     items = [x.strip() for x in line.split("\t")]
                     sampled_index = random.sample(range(7), 1)[0]
-                    while sampled_index == 0 or items[sampled_index] == u'None':
+                    while sampled_index == 0 or items[sampled_index] == u'UNK':
                         sampled_index = random.sample(range(7), 1)[0]
                     items[sampled_index] = u'UNK'
                     str = u'\t'.join(items) + u'\n'
