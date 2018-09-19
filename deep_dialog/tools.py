@@ -39,12 +39,12 @@ def to_tokens(text):
     # return [w for w in tokens if w not in stopwords.words('english')]
     # TODO: 将英文分词工具换成中文分词工具
     t1 = remove_punctuation(text)
-    print("-" * 200 + "\norigin text: {}\nreplaced text:{}\n".format(text.encode("utf8"), t1.encode("utf8")) + '-' * 200)
+    # print("-" * 200 + "\norigin text: {}\nreplaced text:{}\n".format(text.encode("utf8"), t1.encode("utf8")) + '-' * 200)
     chinese_stopwords = generate_chinese_stop_words()
     tokens = jieba.cut(text, cut_all=False, HMM=True)
-    for token in tokens:
-        print(token)
-    return [w for w in tokens if w != u'']
+    # for token in tokens:
+    #     print(token)
+    return tokens
 
 def entropy(items):
     if type(items) is Counter or type(items) is dict:

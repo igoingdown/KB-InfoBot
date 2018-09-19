@@ -43,36 +43,46 @@ class FeatureExtractor:
         :param corpus: database文本文件path
         :return: None
         '''
-        try:
-            # TODO: 查看feature extractor是怎么工作的，这是理解belief tracker的关键
-            print ("-" * 200 + "\nbuild vocab from db, db path: {}\n".format(corpus.encode("utf8")) + "-" * 200)
-            f = io.open(corpus, 'r')
+
+        # 中文中就不需要N-Gram了！
+        with open(corpus, 'r') as f:
             for line in f:
-                elements = line.rstrip().split('\t')[1:]
+                elements = line.strip().split('\t')[1:]
                 for ele in elements:
                     tokens = to_tokens(ele)
-                    for i in range(len(tokens)):
-                        for t in range(self.N):
-                            if i-t<0: continue
-                            ngram = '_'.join(tokens[i-t:i+1])
-                            if ngram not in self.grams:
-                                self.grams[ngram] = self.n
-                                self.n += 1
-            f.close()
-        except UnicodeDecodeError:
-            f = open(corpus, 'r')
-            for line in f:
-                elements = line.rstrip().split('\t')[1:]
-                for ele in elements:
-                    tokens = to_tokens(ele)
-                    for i in range(len(tokens)):
-                        for t in range(self.N):
-                            if i-t<0: continue
-                            ngram = '_'.join(tokens[i-t:i+1])
-                            if ngram not in self.grams:
-                                self.grams[ngram] = self.n
-                                self.n += 1
-            f.close()
+                    for ngram in tokens:
+                        if ngram not in self.grams:
+                            self.grams[ngram] = self.n
+                            self.n += 1
+
+        # try:
+        #     f = io.open(corpus, 'r')
+        #     for line in f:
+        #         elements = line.rstrip().split('\t')[1:]
+        #         for ele in elements:
+        #             tokens = to_tokens(ele)
+        #             for i in range(len(tokens)):
+        #                 for t in range(self.N):
+        #                     if i-t<0: continue
+        #                     ngram = '_'.join(tokens[i-t:i+1])
+        #                     if ngram not in self.grams:
+        #                         self.grams[ngram] = self.n
+        #                         self.n += 1
+        #     f.close()
+        # except UnicodeDecodeError:
+        #     f = open(corpus, 'r')
+        #     for line in f:
+        #         elements = line.rstrip().split('\t')[1:]
+        #         for ele in elements:
+        #             tokens = to_tokens(ele)
+        #             for i in range(len(tokens)):
+        #                 for t in range(self.N):
+        #                     if i-t<0: continue
+        #                     ngram = '_'.join(tokens[i-t:i+1])
+        #                     if ngram not in self.grams:
+        #                         self.grams[ngram] = self.n
+        #                         self.n += 1
+        #     f.close()
 
     def _build_vocab_from_corpus(self, corpus):
         '''
@@ -80,33 +90,40 @@ class FeatureExtractor:
         :param corpus: 对话文本文件path
         :return: None
         '''
+
+        #转到中文之后，N-Gram不再必要了
         if not os.path.isfile(corpus): return
-        try:
-            # TODO: 查看feature extractor是怎么工作的，这是理解belief tracker的关键
-            print ("-" * 200 + "\nbuild vocab from corpus, corpus path: {}\n".format(corpus.encode("utf8")) + "-" * 200)
-            f = io.open(corpus, 'r')
+        with open(corpus, 'r') as f:
             for line in f:
-                tokens = to_tokens(line.rstrip())
-                for i in range(len(tokens)):
-                    for t in range(self.N):
-                        if i-t<0: continue
-                        ngram = '_'.join(tokens[i-t:i+1])
-                        if ngram not in self.grams:
-                            self.grams[ngram] = self.n
-                            self.n += 1
-            f.close()
-        except UnicodeDecodeError:
-            f = open(corpus, 'r')
-            for line in f:
-                tokens = to_tokens(line.rstrip())
-                for i in range(len(tokens)):
-                    for t in range(self.N):
-                        if i-t<0: continue
-                        ngram = '_'.join(tokens[i-t:i+1])
-                        if ngram not in self.grams:
-                            self.grams[ngram] = self.n
-                            self.n += 1
-            f.close()
+                for ngram in to_tokens(line.strip()):
+                    if ngram not in self.grams:
+                        self.grams[ngram] = self.n
+                        self.n += 1
+
+        # try:
+        #     f = io.open(corpus, 'r')
+        #     for line in f:
+        #         tokens = to_tokens(line.rstrip())
+        #         for i in range(len(tokens)):
+        #             for t in range(self.N):
+        #                 if i-t<0: continue
+        #                 ngram = '_'.join(tokens[i-t:i+1])
+        #                 if ngram not in self.grams:
+        #                     self.grams[ngram] = self.n
+        #                     self.n += 1
+        #     f.close()
+        # except UnicodeDecodeError:
+        #     f = open(corpus, 'r')
+        #     for line in f:
+        #         tokens = to_tokens(line.rstrip())
+        #         for i in range(len(tokens)):
+        #             for t in range(self.N):
+        #                 if i-t<0: continue
+        #                 ngram = '_'.join(tokens[i-t:i+1])
+        #                 if ngram not in self.grams:
+        #                     self.grams[ngram] = self.n
+        #                     self.n += 1
+        #     f.close()
 
     def featurize(self, text):
         '''
@@ -115,13 +132,19 @@ class FeatureExtractor:
         :return: 长度为|Grams|的向量，向量中的每个值表示该Gram的数量
         '''
         vec = np.zeros((len(self.grams),)).astype('float32')
-        tokens = to_tokens(text)
-        for i in range(len(tokens)):
-            for t in range(self.N):
-                if i-t<0: continue
-                ngram = '_'.join(tokens[i-t:i+1])
-                if ngram in self.grams: 
-                    vec[self.grams[ngram]] += 1.
+
+        # 转到中文之后，N-Gram不再必要了
+        for ngram in to_tokens(text):
+            if ngram in self.grams:
+                vec[self.grams[ngram]] += 1.
+
+        # tokens = to_tokens(text)
+        # for i in range(len(tokens)):
+        #     for t in range(self.N):
+        #         if i-t<0: continue
+        #         ngram = '_'.join(tokens[i-t:i+1])
+        #         if ngram in self.grams:
+        #             vec[self.grams[ngram]] += 1.
         return vec
 
 if __name__=='__main__':
