@@ -145,6 +145,12 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
             if self.num_updates%SAVEF==0: self.save_model(dialog_config.MODEL_PATH+self._name)
 
         self.state = {}
+        # TODO: dumps或者loads有bug
+        database_dumps = pkl.dumps(self.database, -1)
+        print(type(database_dumps), database_dumps)
+        database_loads = pkl.loads(database_dumps)
+        print(type(database_loads), database_loads)
+
         self.state['database'] = pkl.loads(pkl.dumps(self.database,-1))
         self.state['prevact'] = 'begin@begin'
         self.state['inform_slots'] = self._init_beliefs()
