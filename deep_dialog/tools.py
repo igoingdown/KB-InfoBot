@@ -39,6 +39,8 @@ def to_tokens(text):
     # tokens = nltk.word_tokenize(utt.lower())
     # return [w for w in tokens if w not in stopwords.words('english')]
     # TODO: 将英文分词工具换成中文分词工具
+    print(text.encode("utf8"))
+    print(text.encode("utf8").decode("utf8"))
     t1 = remove_punctuation(text.encode("utf8").decode("utf8"))
     # print("-" * 200 + "\norigin text: {}\nreplaced text:{}\n".format(text.encode("utf8"), t1.encode("utf8")) + '-' * 200)
     chinese_stopwords = generate_chinese_stop_words()
