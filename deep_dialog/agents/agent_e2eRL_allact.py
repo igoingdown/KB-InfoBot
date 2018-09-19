@@ -146,6 +146,10 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
 
         self.state = {}
         # TODO: dumps或者loads有bug
+        fields = dir(self.database)
+        for f in fields:
+            if f[0] != '_':
+                print "{}: {}".format(f, type(getattr(self.database, f)))
         database_dumps = pkl.dumps(self.database, -1)
         print(type(database_dumps), database_dumps)
         database_loads = pkl.loads(database_dumps)
