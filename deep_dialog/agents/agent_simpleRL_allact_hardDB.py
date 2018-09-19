@@ -85,7 +85,7 @@ class AgentSimpleRLAllActHardDB(RLAgent,HardDB,BeliefTracker):
             else: n_suc += 1
             tot += 1
         print 'Update %d. Avg turns = %.2f . Avg Reward = %.2f . Success Rate = %.2f . Fail Rate = %.2f . Incomplete Rate = %.2f . Loss = %.3f' % \
-                (self.num_updates, avg_turn, avg_ret, \
+                (self.num_updates, avg_turn, avg_ret,
                 float(n_suc)/tot, float(n_fail)/tot, float(n_inc)/tot, avg_loss)
 
     def initialize_episode(self):
