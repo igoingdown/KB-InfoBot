@@ -43,7 +43,7 @@ class FeatureExtractor:
         '''
         try:
             # TODO: 查看feature extractor是怎么工作的，这是理解belief tracker的关键
-            print ("-" * 200 + "\nbuild vocab from db, db path: {}\n".format(corpus) + "-" * 200)
+            print ("-" * 200 + "\nbuild vocab from db, db path: {}\n".format(corpus.encode("utf8")) + "-" * 200)
             f = io.open(corpus, 'r')
             for line in f:
                 elements = line.rstrip().split('\t')[1:]
@@ -81,7 +81,7 @@ class FeatureExtractor:
         if not os.path.isfile(corpus): return
         try:
             # TODO: 查看feature extractor是怎么工作的，这是理解belief tracker的关键
-            print ("-" * 200 + "\nbuild vocab from corpus, corpus path: {}\n".format(corpus) + "-" * 200)
+            print ("-" * 200 + "\nbuild vocab from corpus, corpus path: {}\n".format(corpus.encode("utf8")) + "-" * 200)
             f = io.open(corpus, 'r')
             for line in f:
                 tokens = to_tokens(line.rstrip())

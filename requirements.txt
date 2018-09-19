@@ -4,3 +4,4 @@ numpy==1.12.1
 Theano==0.9.0.dev1
 dataset==0.8.0
 psyco==1.6
+jieba==0.39
