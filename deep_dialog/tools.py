@@ -21,7 +21,7 @@ def remove_punctuation(text):
     '''
     try:
         text = text.decode("utf8")
-    except UnicodeDecodeError:
+    except Exception as e:
         pass
     return re.sub(ur"[\s+\.\!\/_,$%^*(+\"\']+|[+——！，。？、~@#￥%……&*（）]+", u" ", text, re.U)
 
