@@ -146,18 +146,18 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
 
         self.state = {}
         # TODO: dumps或者loads有bug
-        fields = dir(self.database)
-        for f in fields:
-            print "{}: {}".format(f, type(getattr(self.database, f)))
-            if not f.startswith("__"):
-                try:
-                    pkl.dumps(getattr(self.database, f), -1)
-                except Exception as e:
-                    print("{}: dump failed!, exception: {}".format(f, e))
-        database_dumps = pkl.dumps(self.database, -1)
-        print(type(database_dumps), database_dumps)
-        database_loads = pkl.loads(database_dumps)
-        print(type(database_loads), database_loads)
+        # fields = dir(self.database)
+        # for f in fields:
+        #     print "{}: {}".format(f, type(getattr(self.database, f)))
+        #     if not f.startswith("__"):
+        #         try:
+        #             pkl.dumps(getattr(self.database, f), -1)
+        #         except Exception as e:
+        #             print("{}: dump failed!, exception: {}".format(f, e))
+        # database_dumps = pkl.dumps(self.database, -1)
+        # print(type(database_dumps), database_dumps)
+        # database_loads = pkl.loads(database_dumps)
+        # print(type(database_loads), database_loads)
 
         self.state['database'] = pkl.loads(pkl.dumps(self.database,-1))
         self.state['prevact'] = 'begin@begin'

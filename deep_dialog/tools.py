@@ -49,7 +49,7 @@ def to_tokens(text):
     tokens = jieba.cut(t1, cut_all=False, HMM=True)
     # for token in tokens:
     #     print(token)
-    return tokens
+    return [token for token in tokens]
 
 def entropy(items):
     if type(items) is Counter or type(items) is dict:
