@@ -54,10 +54,10 @@ class S2SNLG:
         :param inform_slots:
         :return: NL sentence
         '''
-        for k, v in request_slots:
+        for k, v in request_slots.iteritems():
             print(type(k), type(v))
             print("request slots key: {}, value: {}".format(k, v))
-        for k, v in inform_slots:
+        for k, v in inform_slots.iteritems():
             print(type(k), type(v))
             print("inform slots key: {}, value: {}".format(k, v))
         if all([r in self.slots for r in request_slots.keys()]) and all([i in self.slots for i in inform_slots.keys()]):
