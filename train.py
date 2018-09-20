@@ -197,6 +197,7 @@ def eval_agent(ite, max_perf, best=False):
     '''
     num_iter = 2000
     nn = np.sqrt(num_iter)
+    # nn用于计算2000轮对话测试结果的标注差
     if best: agent_eval.load_model(dialog_config.MODEL_PATH+'best_'+agent_eval._name)
     else: agent_eval.load_model(dialog_config.MODEL_PATH+agent_eval._name)
     all_rewards = np.zeros((num_iter,))
@@ -233,7 +234,7 @@ mp = -10.
 for i in range(N):
     if i%(EVALF*params['batch'])==0:
         mp = eval_agent(i,mp)
-    utt = dialog_manager.initialize_episode()  # 在这一步更新模型参数
+    utt = dialog_manager.initialize_episode()  # 在调用agent的initialization_episode函数时更新agent的模型参数
     while(True):
         episode_over, reward, utt, sact = dialog_manager.next_turn()
         if episode_over:

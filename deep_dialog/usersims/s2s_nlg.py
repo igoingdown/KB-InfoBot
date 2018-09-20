@@ -80,7 +80,7 @@ class S2SNLG:
             out = unicode(sent)
         except UnicodeDecodeError:
             out = unicode(sent.decode('utf8'))
-        print("nlg model ans: {}".format(out))
+        print("nlg model ans: {}".format(out.encode("utf8")))
         return out
 
     def generate_from_template(self, act, request_slots, inform_slots):
@@ -93,7 +93,7 @@ class S2SNLG:
         sent = self._fill_slots(temp, request_slots, i_slots)
 
         sent = unicode(sent)
-        print("template ans: {}".format(sent))
+        print("template ans: {}".format(sent.encode("utf8")))
         return sent
 
     def _fill_slots(self, temp, request_slots, i_slots):
