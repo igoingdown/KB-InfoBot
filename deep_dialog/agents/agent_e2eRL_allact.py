@@ -149,6 +149,11 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         fields = dir(self.database)
         for f in fields:
             print "{}: {}".format(f, type(getattr(self.database, f)))
+            if not f.startswith("__"):
+                try:
+                    pkl.dumps(getattr(self.database, f), -1)
+                except Exception as e:
+                    print("{}: dump failed!, exception: {}".format(f, e))
         database_dumps = pkl.dumps(self.database, -1)
         print(type(database_dumps), database_dumps)
         database_loads = pkl.loads(database_dumps)
