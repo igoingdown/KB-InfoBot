@@ -55,11 +55,9 @@ class S2SNLG:
         :return: NL sentence
         '''
         for k, v in request_slots.iteritems():
-            print(type(k), type(v))
-            print("request slots key: {}, value: {}".format(k, v))
+            print("request slots key: {}, value: {}".format(k.encode("utf8"), v.encode("utf8")))
         for k, v in inform_slots.iteritems():
-            print(type(k), type(v))
-            print("inform slots key: {}, value: {}".format(k, v))
+            print("inform slots key: {}, value: {}".format(k.encode("utf8"), v.encode("utf8")))
         if all([r in self.slots for r in request_slots.keys()]) and all([i in self.slots for i in inform_slots.keys()]):
             return self.generate_from_nlg(act, request_slots, inform_slots)
         else:
@@ -92,8 +90,7 @@ class S2SNLG:
     def generate_from_template(self, act, request_slots, inform_slots):
         print ("-" * 100 + "\n")
         for template in self.templates:
-            print(type(template))
-            print("template: {}".format(template))
+            print("template: {}".format(template.encode("utf8")))
         print ("-" * 100 + "\n")
         n_r = len(request_slots.keys())
         i_slots = {k:v for k,v in inform_slots.iteritems() if v is not None}
