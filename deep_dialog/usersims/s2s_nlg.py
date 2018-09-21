@@ -55,9 +55,11 @@ class S2SNLG:
         :return: NL sentence
         '''
         for k, v in request_slots.iteritems():
-            print("request slots key: {}, value: {}".format(k.encode("utf8"), v.encode("utf8")))
+            if k is not None and v is not None:
+                print("request slots key: {}, value: {}".format(k.encode("utf8"), v.encode("utf8")))
         for k, v in inform_slots.iteritems():
-            print("inform slots key: {}, value: {}".format(k.encode("utf8"), v.encode("utf8")))
+            if k is not None and v is not None:
+                print("inform slots key: {}, value: {}".format(k.encode("utf8"), v.encode("utf8")))
         if all([r in self.slots for r in request_slots.keys()]) and all([i in self.slots for i in inform_slots.keys()]):
             return self.generate_from_nlg(act, request_slots, inform_slots)
         else:
@@ -89,8 +91,7 @@ class S2SNLG:
 
     def generate_from_template(self, act, request_slots, inform_slots):
         print ("-" * 100 + "\n")
-        for template in self.templates:
-            print("template: {}".format(template.encode("utf8")))
+        print("template: {}".format(self.templates))
         print ("-" * 100 + "\n")
         n_r = len(request_slots.keys())
         i_slots = {k:v for k,v in inform_slots.iteritems() if v is not None}
@@ -120,31 +121,34 @@ class S2SNLG:
         return temp
 
 if __name__=='__main__':
-    temp_file = '../data/templates.p'
-    slot_file = 'NLG/data/slot_set.txt'
-    model_file = 'NLG/checkpoints/nlg_infobot/lstm_tanh_[1470015675.73]_115_120_0.657.p'
-
-    acts = ['inform', 'request']
-    slots = ['actor', 'director', 'release_year', 'genre', 'mpaa_rating', 'critic_rating']
-
-    nlg = S2SNLG(temp_file, slot_file, model_file, 2.0)
-
-    for i in range(10000):
-        a = random.choice(acts)
-        if a=='inform':
-            i_slots = [random.choice(slots)]
-            inform_slots = {}
-            for s in i_slots:
-                inform_slots[s] = u'blah'
-            request_slots = {}
-            print a, inform_slots, request_slots
-            print nlg.generate(a, inform_slots, request_slots)
-        else:
-            request_slots = {}
-            request_slots['moviename'] = 'UNK'
-            inform_slots = {}
-            i_slots = random.sample(slots, 2)
-            for s in i_slots:
-                inform_slots[s] = u'blah'
-            print a, inform_slots, request_slots
-            print nlg.generate(a, inform_slots, request_slots)
+    # TODO: 查看template是什么东西
+    template_file = '/home/zmx/python_project/KB-InfoBot/data/templates.p'
+    with open(template_file, "rb") as f:
+        print pkl.load(f)
+    # slot_file = 'NLG/data/slot_set.txt'
+    # model_file = 'NLG/checkpoints/nlg_infobot/lstm_tanh_[1470015675.73]_115_120_0.657.p'
+    #
+    # acts = ['inform', 'request']
+    # slots = ['actor', 'director', 'release_year', 'genre', 'mpaa_rating', 'critic_rating']
+    #
+    # nlg = S2SNLG(temp_file, slot_file, model_file, 2.0)
+    #
+    # for i in range(10000):
+    #     a = random.choice(acts)
+    #     if a=='inform':
+    #         i_slots = [random.choice(slots)]
+    #         inform_slots = {}
+    #         for s in i_slots:
+    #             inform_slots[s] = u'blah'
+    #         request_slots = {}
+    #         print a, inform_slots, request_slots
+    #         print nlg.generate(a, inform_slots, request_slots)
+    #     else:
+    #         request_slots = {}
+    #         request_slots['moviename'] = 'UNK'
+    #         inform_slots = {}
+    #         i_slots = random.sample(slots, 2)
+    #         for s in i_slots:
+    #             inform_slots[s] = u'blah'
+    #         print a, inform_slots, request_slots
+    #         print nlg.generate(a, inform_slots, request_slots)
