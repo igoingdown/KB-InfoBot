@@ -90,9 +90,9 @@ class S2SNLG:
         return out
 
     def generate_from_template(self, act, request_slots, inform_slots):
-        print ("-" * 100 + "\n")
-        print("template: {}".format(self.templates))
-        print ("-" * 100 + "\n")
+        # print ("-" * 100 + "\n")
+        # print("template: {}".format(self.templates))
+        # print ("-" * 100 + "\n")
         n_r = len(request_slots.keys())
         i_slots = {k:v for k,v in inform_slots.iteritems() if v is not None}
         n_i = len(i_slots.keys())
