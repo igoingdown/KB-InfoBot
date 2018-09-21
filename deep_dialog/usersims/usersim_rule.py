@@ -112,8 +112,14 @@ class RuleSimulator:
             known_slots = [s for i,s in enumerate(dialog_config.inform_slots) 
                     if self.database.tuples[self.goal['target']][i]!='UNK']
             # TODO: 查看Unicode对于判断语句的影响
-            print known_slots
-            print dialog_config.inform_slots
+            print "-" * 100 + "\n"
+            print "known slots: "
+            for known_slot in known_slots:
+                print known_slot
+            print "inform slots: "
+            for inform_slot in dialog_config.inform_slots:
+                print inform_slot
+            # print dialog_config.inform_slots
             print "-" * 100 + "\n"
             # known_slots 是database中target record所有已知的所有slot及值
 
