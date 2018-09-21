@@ -145,7 +145,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
             if self.num_updates%SAVEF==0: self.save_model(dialog_config.MODEL_PATH+self._name)
 
         self.state = {}
-        # TODO: dumps或者loads有bug
+        # #解决dumps的bug
         # fields = dir(self.database)
         # for f in fields:
         #     print "{}: {}".format(f, type(getattr(self.database, f)))

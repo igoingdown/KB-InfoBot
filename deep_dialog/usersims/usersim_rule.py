@@ -13,7 +13,7 @@ import nltk
 
 from deep_dialog import dialog_config
 
-DOMAIN_NAME = 'movie'
+DOMAIN_NAME = u'影片'
 
 def weighted_choice(choices, weights):
     total = sum(weights)
@@ -111,6 +111,10 @@ class RuleSimulator:
             self.goal['inform_slots'] = {}
             known_slots = [s for i,s in enumerate(dialog_config.inform_slots) 
                     if self.database.tuples[self.goal['target']][i]!='UNK']
+            # TODO: 查看Unicode对于判断语句的影响
+            print known_slots
+            print dialog_config.inform_slots
+            print "-" * 100 + "\n"
             # known_slots 是database中target record所有已知的所有slot及值
 
             care_about = random.sample(known_slots, int(self.dk_prob*len(known_slots)))
