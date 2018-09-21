@@ -167,7 +167,7 @@ f.write(uname)
 f.close()
 try:
     for i in range(N):
-        print "-" * 200 + "Dialog %d" %i
+        print "-" * 200 + "\nDialog %d" %i
         dia = []
         curr_agent = agent
         dia.append(curr_agent)

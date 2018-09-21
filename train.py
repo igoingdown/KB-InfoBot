@@ -63,8 +63,8 @@ for k,v in dataset_params[params['db']].iteritems():
 for k,v in agent_params[agent_map[params['agent_type']]].iteritems():
     params[k] = v
 
-print 'Dialog Parameters: '
-print json.dumps(params, indent=2)
+# print 'Dialog Parameters: '
+# print json.dumps(params, indent=2)
 
 max_turn = params['max_turn']
 err_prob = params['err_prob']

@@ -28,9 +28,9 @@ class FeatureExtractor:
             self.grams = {}
             self.n = 0
             if corpus_path is not None: self._build_vocab_from_corpus(corpus_path)
-            print("vocab size after corpus building: {}".format(self.n))
+            # print("vocab size after corpus building: {}".format(self.n))
             if db_path is not None: self._build_vocab_from_db(db_path)
-            print("vocab size after db building:{}".format(self.n))
+            # print("vocab size after db building:{}".format(self.n))
             f = open(save_path, 'wb')
             pkl.dump(self.grams, f)
             pkl.dump(self.n, f)

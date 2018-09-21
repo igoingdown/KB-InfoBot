@@ -22,8 +22,8 @@ class MovieDict:
     def load_dict(self, path):
         dict_data = pickle.load(open(path, 'rb'))
         self.dict = copy.deepcopy(dict_data)
-        # TODO: 构造一份自己的dict
-        print("-" * 200 + "movie dict: {}\n".format(self.dict) + "-" * 200)
+        # 构造一份自己的dict
+        # print("-" * 200 + "movie dict: {}\n".format(self.dict) + "-" * 200)
 
     def count_values(self):
         self.lengths = {}
