@@ -43,7 +43,7 @@ class DialogManager:
         if self.verbose:
             print 'Turn', self.user_action['turn'], 'user action:', self.user_action['diaact'], \
                     '\t', 'inform slots:', self.user_action['inform_slots']
-            print 'Utterance:', self.user_action['nl_sentence'], '\n'
+            print 'Utterance:', self.user_action['nl_sentence'].encode("utf8"), '\n'
         
         self.sys_actions = self.agent.next(self.user_action, verbose=self.verbose)
     
