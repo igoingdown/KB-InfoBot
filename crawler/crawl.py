@@ -80,7 +80,7 @@ def parse_page(address):
 
 def save_data(data, path):
     with open(path, "wb") as f:
-        f.write(u'片名	主演	评分	类别	评级	发行年份	导演\n')
+        f.write(u'影片	主演	评分	类别	评级	发行年份	导演\n')
         for movie in data:
             str = u"\t".join([movie.movie_name, movie.actor, movie.rating, movie.genre,
                              movie.mpaa_rating, movie.release_year, movie.director])

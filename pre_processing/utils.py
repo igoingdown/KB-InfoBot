@@ -10,7 +10,7 @@ import random
 
 def generate_dict_from_db(db_path):
     d = {}
-    d[u'片名'] = set()
+    d[u'影片'] = set()
     d[u'主演'] = set()
     d[u'评分'] = set()
     d[u'类别'] = set()
@@ -24,7 +24,7 @@ def generate_dict_from_db(db_path):
             if line_num != 0:
                 line = line.decode("utf-8")
                 movie_name,actor,critic_rating,genre,mpaa_rating,release_year,director = line.split("\t")
-                if movie_name != u"UNK": d[u'片名'].add(movie_name.strip())
+                if movie_name != u"UNK": d[u'影片'].add(movie_name.strip())
                 if actor != u"UNK": d[u'主演'].add(actor.strip())
                 if critic_rating != u"UNK": d[u'评分'].add(critic_rating.strip())
                 if genre != u"UNK": d[u'类别'].add(genre.strip())
@@ -36,10 +36,38 @@ def generate_dict_from_db(db_path):
         d[key] = list(d[key])
     return d
 
+def generate_templates(template_path):
+    templates = {'request_1_1': [u'我想找@islot0是@ival0的@rslot0.',
+                                 u'能告诉我哪部@rslot0的@islot0是@ival0吗?',
+                                 u'哪部@rslot0的@islot0是@ival0?',
+                                 u'搜索@islot0为@ival0的@rslot0.'],
+                 'request_1_0': [u'我想知道@rslot0.', u'能告诉我@rslot0吗?'],
+                 'request_1_3': [u'我想找一个@islot0是@ival0, @islot1是@ival1且@islot2是@ival2的@rslot0.',
+                                 u'能告诉我一个@islot0是@ival0, @islot1是@ival1且@islot2是@ival2的@rslot0吗？',
+                                 u'哪个@rslot0的@islot0是@ival0,@islot1是@ival1且@islot2是@ival2?'],
+                 'request_1_2': [u'我想找一个@islot0是@ival0，@islot1是@ival1的@rslot0.',
+                                 u'能帮我找一个@islot0是@ival0，@islot1是@ival1的@rslot0?',
+                                 u'请问有没有@islot0是@ival0，@islot1是@ival1的@rslot0?',
+                                 u'哪个@rslot0的@islot0是@ival0，@islot1是@ival1？'],
+                 'request_1_5': [u'我想找一个@rslot0，@islot0是@ival0, @islot1是@ival1, @islot2是@ival2, @islot3是@ival3，@islot4是@ival4.',
+                                 u'能不能帮我找一个@islot0是@ival0, @islot1是@ival1, @islot2是@ival2, @islot3是@ival3，@islot4是@ival4的@rslot0?',
+                                 u'哪个@rslot0的@islot0是@ival0, @islot1是@ival1, @islot2是@ival2, @islot3是@ival3且@islot4是@ival4?',
+                                 u'我想找一个@islot0是@ival0, @islot1是@ival1, @islot2是@ival2, @islot3是@ival3, @islot4是@ival4的@rslot0.'],
+                 'request_1_4': [u'我想找一个@islot0是@ival0, @islot1是@ival1, @islot2是@ival2, @islot3是@ival3的@rslot0.',
+                                 u'能告诉我@islot0是@ival0, @islot1是@ival1, @islot2是@ival2，@islot3是@ival3的@rslot0是哪一个吗?',
+                                 u'哪个@rslot0的@islot0是@ival0, @islot1是@ival1, @islot2是@ival2且@islot3是@ival3?',
+                                 u'搜索@islot0是@ival0, @islot1是@ival1, @islot2是@ival2，@islot3是@ival3的@rslot0.'],
+                 'thanks_0_0': [u'谢谢，这就是我要找的电影', u'谢谢!', u'太好了! 找到了!', u'OK',u'找到了！谢谢！'],
+                 'inform_0_1': [u'@ival0', u'@islot0是@ival0.', u'是@ival0.', u'@ival0 @islot0', u'我记得是@ival0.'],
+                 'inform_0_0': [u'我不知道', u'我不记得了', u'我不太清楚', u'我不太了解'],
+                 'deny_0_0': [u'不对.', u'不是这个', u'这不是我想找的电影', u'错误', u'出错啦！']}
+    with open(template_path, "wb") as f:
+        pickle.dump(templates, f)
+
+
 def dump_file(path, obj):
     with open(path, "wb") as f:
         pickle.dump(obj, f)
-
 
 def load_obj_from_file(path):
     if (os.path.exists(path)):
@@ -76,4 +104,5 @@ if __name__ == '__main__':
         for item in v:
             print item
     print p
+    generate_templates("data/templates_chinese.p")
 

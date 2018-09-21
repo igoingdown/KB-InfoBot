@@ -46,8 +46,11 @@ args = parser.parse_args()
 params = vars(args)
 
 params['act_set'] = './data/dia_acts.txt'
-#
-params['template_path'] = './data/templates.p'
+
+# TODO: 将英文template替换为中文template
+# params['template_path'] = './data/templates.p'
+params['template_path'] = './data/templates_chinese.p'
+
 params['nlg_slots_path'] = './data/nlg_slot_set.txt'
 params['nlg_model_path'] = './data/pretrained/lstm_tanh_[1470015675.73]_115_120_0.657.p'
 
