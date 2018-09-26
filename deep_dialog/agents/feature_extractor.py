@@ -54,6 +54,7 @@ class FeatureExtractor:
                     tokens = to_tokens(ele)
                     for ngram in tokens:
                         if ngram.strip() != "" and ngram not in self.grams:
+                            print ngram
                             self.grams[ngram] = self.n
                             self.n += 1
 
@@ -100,6 +101,7 @@ class FeatureExtractor:
                 for ngram in to_tokens(line.strip()):
                     if ngram.strip() != "" and ngram not in self.grams:
                         self.grams[ngram] = self.n
+                        print ngram
                         self.n += 1
 
         # try:
