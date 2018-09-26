@@ -180,7 +180,7 @@ class RuleSimulator:
         for k, v in self.state['inform_slots_noisy'].iteritems():
             print ('{}:{}'.format(k.encode("utf8") if type(k) == unicode else k, v.encode("utf8") if v is not None and type(v) == unicode else v))
         for k in ['reward', 'nl_sentence', 'turn', 'diaact', 'prev_diaact', 'episode_over']:
-            print (self.state[k].encode('utf8') if type(self.state[k]) == unicode else self.state[k])
+            print ('{}:{}'.format(k, self.state[k].encode('utf8') if type(self.state[k]) == unicode else self.state[k]))
         print ("-" * 100)
         return user_action
 
