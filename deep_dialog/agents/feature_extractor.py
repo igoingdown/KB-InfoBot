@@ -34,7 +34,7 @@ class FeatureExtractor:
             with open(save_path, 'wb') as f:
                 pkl.dump(self.grams, f)
                 pkl.dump(self.n, f)
-        print("vocab size:{}".format(self.n))
+        print("initialize vocab size:{}".format(self.n))
 
     def _build_vocab_from_db(self, corpus):
         '''
@@ -53,7 +53,7 @@ class FeatureExtractor:
                     # else:
                     tokens = to_tokens(ele)
                     for ngram in tokens:
-                        if ngram not in self.grams and ngram.strip() != "":
+                        if ngram.strip() != "" and ngram not in self.grams:
                             self.grams[ngram] = self.n
                             self.n += 1
 
