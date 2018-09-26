@@ -37,6 +37,9 @@ class BeliefTracker:
         :param s_t: 用户输入的token化结果
         :return: 匹配统计结果
         '''
+        print('-' * 100 + "\nsearching values: ")
+        for v in s_t:
+            print(v.encode("utf8") if v is not None and type(v) == unicode else v)
         matches = {}
         for slot in self.state['database'].slots:
             matches[slot] = defaultdict(float)
@@ -46,7 +49,10 @@ class BeliefTracker:
                         matches[slot][vi] += 1.
             for vi,f in matches[slot].iteritems():
                 val = self.movie_dict.dict[slot][vi]
+                # TODO: 中文版一定要删掉nltk的东西
+                print(nltk.word_tokenize(val))
                 matches[slot][vi] = f/len(nltk.word_tokenize(val))
+        print('-' * 100)
         return matches
 
     def _update_state(self, user_utterance, upd=UPD, verbose=False):
@@ -75,7 +81,8 @@ class BeliefTracker:
                 for y, match in values.iteritems():
                     #y = self.movie_dict.dict[slot].index(val)
                     if verbose:
-                        print 'Detected %s' %self.movie_dict.dict[slot][y], ' update = ', match
+                        v = self.movie_dict.dict[slot][y]
+                        print 'Detected %s' %v.encode("utf8") if v is not None and type(v) == unicode else v, ' update = ', match
                     if matched and requested:
                         alpha = upd*(match + 1. + slot_match[slot])
                     elif matched and not requested:
