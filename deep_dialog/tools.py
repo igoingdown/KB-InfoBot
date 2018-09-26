@@ -47,7 +47,7 @@ def to_tokens(text):
     # print("-" * 200 + "\norigin text: {}\nreplaced text:{}\n".format(text.encode("utf8"), t1.encode("utf8")) + '-' * 200)
     # chinese_stopwords = generate_chinese_stop_words()
     tokens = jieba.cut(t1, cut_all=False, HMM=True)
-    print("结巴tokens: {}".format('\t'.join([v.encode("utf8") if v is not None and type(v) == unicode else v for v in tokens])))
+    # print("结巴tokens: {}".format('\t'.join([v.encode("utf8") if v is not None and type(v) == unicode else v for v in tokens])))
     return [token for token in tokens]
 
 def entropy(items):

@@ -98,7 +98,7 @@ class FeatureExtractor:
         with open(corpus, 'r') as f:
             for line in f:
                 for ngram in to_tokens(line.strip()):
-                    if ngram not in self.grams:
+                    if ngram.strip() != "" and ngram not in self.grams:
                         self.grams[ngram] = self.n
                         self.n += 1
 
