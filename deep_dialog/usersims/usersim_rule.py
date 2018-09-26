@@ -165,8 +165,23 @@ class RuleSimulator:
         # first action
         episode_over, user_action = self._sample_action()
         assert (episode_over != 1),' but we just started'
-        # TODO: 查看用户采取初始化的action之后的state所包含的内容
-        print("-" * 200 + "\nuser initial state: {}\n".format(self.state) + "-" * 200)
+        # 查看用户采取初始化的action之后的state所包含的内容
+        print("-" * 100)
+        print("user initial state: ")
+        print("".format(self.state))
+        print 'inform slots:'
+        for k, v in self.state['inform_slots'].iteritems():
+            print ('{}:{}'.format(k.encode("utf8") if type(k) == unicode else k, v.encode("utf8") if v is not None and type(v) == unicode else v))
+        print 'request slots:'
+        for k, v in self.state['request_slots'].iteritems():
+            print ('{}:{}'.format(k.encode("utf8") if type(k) == unicode else k,
+                                  v.encode("utf8") if v is not None and type(v) == unicode else v))
+        print 'inform slots noisy'
+        for k, v in self.state['inform_slots_noisy'].iteritems():
+            print ('{}:{}'.format(k.encode("utf8") if type(k) == unicode else k, v.encode("utf8") if v is not None and type(v) == unicode else v))
+        for k in ['reward', 'nl_sentence', 'turn', 'diaact', 'prev_diaact', 'episode_over']:
+            print (self.state[k].encode('utf8') if type(self.state[k]) == unicode else self.state[k])
+        print ("-" * 100)
         return user_action
 
     def next(self, state):

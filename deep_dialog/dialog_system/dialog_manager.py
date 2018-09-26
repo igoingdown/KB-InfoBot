@@ -41,17 +41,19 @@ class DialogManager:
         # TODO: 为了查看对话进程，先开启唠叨模式
         self.verbose = True
         if self.verbose:
-            print 'Turn', self.user_action['turn'], 'user action:', self.user_action['diaact'], \
-                    '\t', 'inform slots:', self.user_action['inform_slots']
+            print 'Turn', self.user_action['turn'], 'user action:', self.user_action['diaact']
+            print 'inform slots:'
+            for k, v in self.user_action['inform_slots'].iteritems():
+                print ('{}:{}'.format(k.encode("utf8") if type(k) == unicode else k, v.encode("utf8") if v is not None and type(v) == unicode else v))
             print 'Utterance:', self.user_action['nl_sentence'].encode("utf8"), '\n'
         
         self.sys_actions = self.agent.next(self.user_action, verbose=self.verbose)
     
         self.sys_actions['turn'] = self.user_action['turn'] + 1
         if self.verbose:
-            print("Turn %d sys action: %s, request slots: %s" % \
-                    (self.sys_actions['turn'], self.sys_actions['diaact'],
-                     self.sys_actions['request_slots']) + '\n')
+            print("Turn %d sys action: %s" %(self.sys_actions['turn'], self.sys_actions['diaact']))
+            for k, v in self.sys_actions['request_slots'].iteritems():
+                print ('{}:{}'.format(k.encode("utf8") if type(k) == unicode else k, v.encode("utf8") if v is not None and type(v) == unicode else v))
 
         self.user_action, episode_over, reward = self.user.next(self.sys_actions)
         if episode_over: self.agent.terminate_episode(self.user_action)
@@ -73,7 +75,9 @@ class DialogManager:
                         else:
                             val = self.database_incomplete.tuples[ii][it]
                             out.append('%s'%val)
-                    print('\t'.join([o.encode('latin-1', 'replace') for o in out]))
+                    # TODO: 输出结果，按utf8编码
+                    # print('\t'.join([o.encode('latin-1', 'replace') for o in out]))
+                    print('\t'.join([o.encode('utf8') for o in out]))
         # TODO: 在进行其他操作之前，先将唠叨模式关闭
         self.verbose = False
         return (episode_over, reward, self.user_action, self.sys_actions)
