@@ -49,10 +49,10 @@ class FeatureExtractor:
             for line in f:
                 elements = line.strip().split('\t')[1:]
                 for ele in elements:
-                    if '·' in ele:
-                        tokens = ele.split('·')
-                    else:
-                        tokens = to_tokens(ele)
+                    # if '·' in ele:
+                    #     tokens = ele.split('·')
+                    # else:
+                    tokens = to_tokens(ele)
                     for ngram in tokens:
                         if ngram not in self.grams:
                             self.grams[ngram] = self.n
