@@ -77,7 +77,7 @@ class DialogManager:
                             out.append('%s'%val)
                     # TODO: 输出结果，按utf8编码
                     # print('\t'.join([o.encode('latin-1', 'replace') for o in out]))
-                    print('\t'.join([o.encode('utf8') for o in out]))
+                    print('\t'.join([v.encode("utf8") if v is not None and type(v) == unicode else v for v in out]))
         # TODO: 在进行其他操作之前，先将唠叨模式关闭
         self.verbose = False
         return (episode_over, reward, self.user_action, self.sys_actions)

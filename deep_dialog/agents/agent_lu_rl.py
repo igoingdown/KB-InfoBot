@@ -122,7 +122,10 @@ class E2ERLAgent:
         unknown = [db.unks[s] for s in dialog_config.inform_slots]
         ids = [db.ids[s] for s in dialog_config.inform_slots]
 
-        print("-" * 100 + "\ndb unks: {}\n".format(db.unks))
+        print("-" * 100 + '\ndb unknown:')
+        for k, v in db.unks.iteritems():
+            print ('{}:{}'.format(k.encode("utf8") if type(k) == unicode else k,
+                                  v.encode("utf8") if v is not None and type(v) == unicode else v))
         print("unknown rows: {}".format(unknown))
         print("-" * 100)
 
