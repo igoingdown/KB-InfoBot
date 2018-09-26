@@ -233,7 +233,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         '''
         每轮对话结束后，将最新的对话状态填充到列表或者更新之前存储的上一次的状态
         :param act: dict，保存了action的细节
-        :param p: ??
+        :param p: 每轮结束用户输入的特征和意图
         :param action: 本轮的高分action或者抽样得到的action
         :param rew: reward
         :param p_out: policy网络的RNN输出，可以作为下一轮的RNN输入
@@ -324,7 +324,8 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
 
     def terminate_episode(self, user_action):
         '''
-        当用户输入后状态变为终结时，结束本episode，将state中存储每个turn的输入信息转移到pool中，供update函数更新agent的参数
+        当用户输入后状态变为终结时，结束本episode，将state中存储每个turn的输入信息转移到pool中，
+        供update函数更新agent的参数,update函数更新参数是多个batch一起更新的，这样会更高效？
         :param user_action: 输入输入之后的对话状态
         :return: None
         '''

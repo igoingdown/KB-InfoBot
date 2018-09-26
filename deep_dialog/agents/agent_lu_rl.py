@@ -92,10 +92,10 @@ class E2ERLAgent:
         :param out_size: inform slots的个数 + 1，表示所有可选的action空间，前inform slots个对应request，最后一个是inform
         :param slot_sizes: 每个slot的value set的大小
         :param db: database
-        :param n_hid: hidden size，RNN的隐向量的size
+        :param n_hid: hidden size，RNN的隐向量的size, BF和Pol用的是一样的！
         :param learning_rate_sl: learning rate for supervised learning, 会变化，训练一定的轮数减少一半
         :param learning_rate_rl: learning rate for reinforcement learning, 0.05
-        :param batch_size: batch size，B=128
+        :param batch_size: batch size，单轮对话时B=1，参数更新时B=128
         :param ment: RL正则化loss的权重，在不需要正则化项的时候可以将这个超参数设为0
         :param input_type: policy network的输入是否要降维(full表示不降维，entropy表示用)
         :param sl: 在什么阶段应用SL？belief tracker，policy network 还是两个都用(e2e)
@@ -116,14 +116,17 @@ class E2ERLAgent:
         counts = db.counts
 
         m_unk = [db.inv_counts[s][-1] for s in dialog_config.inform_slots]
-        # m_unk实际上是每个slot的missing value的count 列表
+        # m_unk实际上是每个slot的missing value的出现次数列表
 
         prior = [db.priors[s] for s in dialog_config.inform_slots]
         unknown = [db.unks[s] for s in dialog_config.inform_slots]
         ids = [db.ids[s] for s in dialog_config.inform_slots]
 
-        input_var, turn_mask, act_mask, reward_var = T.ftensor3('in'), T.bmatrix('tm'), \
-                T.btensor3('am'), T.fvector('r')
+        print("-" * 100 + "\ndb unks: {}\n".format(db.unks))
+        print("unknown rows: {}".format(unknown))
+        print("-" * 100)
+
+        input_var, turn_mask, act_mask, reward_var = T.ftensor3('in'), T.bmatrix('tm'), T.btensor3('am'), T.fvector('r')
         T_var, N_var = T.as_tensor_variable(table), T.as_tensor_variable(counts)
         db_index_var = T.imatrix('db')
         db_index_switch = T.bvector('s')
@@ -137,15 +140,15 @@ class E2ERLAgent:
 
         def _add_unk(p,m,N):
             '''
-
+            对p进行修正，加入UNK的分布
             :param p: (BH,|V|), p0: (1,|V|)
             :param m: num missing
             :param N: total records
-            :return:
+            :return: 加入unk之后的p分布，(BH, |V| + 1)
             '''
 
-            t_unk = T.as_tensor_variable(float(m)/N)
-            ps = p*(1.-t_unk)
+            t_unk = T.as_tensor_variable(float(m)/N)  # unk的先验分布
+            ps = p*(1.-t_unk)  # p的分布中，要减去unk的那部分
             return T.concatenate([ps, T.tile(t_unk, (ps.shape[0],1))], axis=1)
 
         def kl_divergence(p,q):
@@ -160,7 +163,7 @@ class E2ERLAgent:
 
         # belief tracking
         l_in = L.InputLayer(shape=(None,None,self.in_size), input_var=input_var)
-        # input_var: (B, H, GRAM_SIZE + INFORM_SLOTS)
+        # input_var: (B, H, GRAM_SIZE + INFORM_SLOTS + 1)
         p_vars = []
         pu_vars = []
         phi_vars = []
@@ -174,7 +177,7 @@ class E2ERLAgent:
         self.trackers = []
         for i,s in enumerate(dialog_config.inform_slots):
             hid_state_init = T.fmatrix('h')
-            l_rnn = L.GRULayer(l_in, self.r_hid, hid_init=hid_state_init,  \
+            l_rnn = L.GRULayer(l_in, self.r_hid, hid_init=hid_state_init,
                     mask_input=l_mask_in,
                     grad_clipping=10.) # (B,H,D)
             # D = hidden size
@@ -185,18 +188,18 @@ class E2ERLAgent:
             # print("input var type: {}".format(type(input_var)))
             # print ("input var evaluation: {}".format(input_var.tag.test_value))
 
-            hid_out = L.get_output(l_rnn)[:,-1,:]
+            hid_out = L.get_output(l_rnn)[:,-1,:]   # (B, D)
             # hid_out是RNN最终输出的output，这一点和tensorflow、pytorch是一致的！
             # print("hid out type: {}".format(type(hid_out)))
 
             p_targ = T.ftensor3('p_target_'+s)
             p_t = T.reshape(p_targ, 
-                    (p_targ.shape[0]*p_targ.shape[1],self.slot_sizes[i]))
+                    (p_targ.shape[0]*p_targ.shape[1],self.slot_sizes[i]))   # (BH,|V_j|)
             phi_targ = T.fmatrix('phi_target'+s)
-            phi_t = T.reshape(phi_targ, (phi_targ.shape[0]*phi_targ.shape[1], 1))
+            phi_t = T.reshape(phi_targ, (phi_targ.shape[0]*phi_targ.shape[1], 1)) # (BH,1)
 
             l_b = L.DenseLayer(l_b_in, self.slot_sizes[i], 
-                    nonlinearity=lasagne.nonlinearities.softmax)     # (BH,|V|)
+                    nonlinearity=lasagne.nonlinearities.softmax)     # (BH,|V_j|)
             l_phi = L.DenseLayer(l_b_in, 1, 
                     nonlinearity=lasagne.nonlinearities.sigmoid)     # (BH,1)
 
@@ -208,7 +211,7 @@ class E2ERLAgent:
             kl_loss.append(T.sum(flat_mask.flatten()*kl_divergence(p, p_t))/T.sum(flat_mask))
             x_loss.append(T.sum(flat_mask*lasagne.objectives.binary_crossentropy(phi,phi_t))/
                     T.sum(flat_mask))
-            bt_loss += kl_loss[-1] + x_loss[-1]
+            bt_loss += kl_loss[-1] + x_loss[-1] # (BH,)
 
             p_vars.append(p)
             pu_vars.append(p_u)
@@ -230,12 +233,12 @@ class E2ERLAgent:
             :param N: counts
             :return: 对每个行感兴趣的列表， (BH,N)
             '''
-            O = T.alloc(0.,pv[0].shape[0],Tb.shape[0]) # BH x T.shape[0]
+            O = T.alloc(0.,pv[0].shape[0],Tb.shape[0]) # (BH, N)
             for i,p in enumerate(pv):
                 p_dc = T.tile(phi[i], (1, Tb.shape[0]))
                 O += T.log(p_dc*(1./db.table.shape[0]) + \
                         (1.-p_dc)*(p[:,Tb[:,i]]/N[np.newaxis,:,i]))
-            Op = T.exp(O)#+EPS # BH x T.shape[0]
+            Op = T.exp(O)#+EPS # (BH, N)
             Os = T.sum(Op, axis=1)[:,np.newaxis] # BH
             return Op/Os
 
@@ -271,34 +274,24 @@ class E2ERLAgent:
             H_db = entropy(p_db)
             phv = [ph[:,0] for ph in phi_vars]
             t_in = T.stacklists(H_vars+phv+[H_db]).transpose() # (BH,2M+1)
-            t_in_resh = T.reshape(t_in, (turn_mask.shape[0], turn_mask.shape[1], \
-                    t_in.shape[1])) # (B,H,2M+1)
-            l_in_pol = L.InputLayer(
-                    shape=(None,None,2*len(dialog_config.inform_slots)+1), \
-                    input_var=t_in_resh)
+            t_in_resh = T.reshape(t_in, (turn_mask.shape[0], turn_mask.shape[1], t_in.shape[1])) # (B,H,2M+1)
+            l_in_pol = L.InputLayer(shape=(None,None,2*len(dialog_config.inform_slots)+1), input_var=t_in_resh)
         else:
             # 不对特征进行降维，特征维度非常高，参数量极大！
-            in_reshaped = T.reshape(input_var, 
-                    (input_var.shape[0]*input_var.shape[1], \
-                    input_var.shape[2]))
+            in_reshaped = T.reshape(input_var, (input_var.shape[0]*input_var.shape[1], input_var.shape[2]))
             prev_act = in_reshaped[:,-len(dialog_config.inform_slots):]
             t_in = T.concatenate(pu_vars+phi_vars+[p_db,prev_act], 
                     axis=1) # (BH,D-sum+A)
-            t_in_resh = T.reshape(t_in, (turn_mask.shape[0], turn_mask.shape[1], \
-                    t_in.shape[1])) # (B,H,D-sum)
+            t_in_resh = T.reshape(t_in, (turn_mask.shape[0], turn_mask.shape[1], t_in.shape[1])) # (B,H,D-sum)
             l_in_pol = L.InputLayer(shape=(None,None,sum(self.slot_sizes)+ \
                     3*len(dialog_config.inform_slots)+ \
                     table.shape[0]), input_var=t_in_resh)
 
         pol_in = T.fmatrix('pol-h')
-        l_pol_rnn = L.GRULayer(l_in_pol, n_hid, hid_init=pol_in, 
-                mask_input=l_mask_in,
-                grad_clipping=10.) # (B,H,D)
+        l_pol_rnn = L.GRULayer(l_in_pol, n_hid, hid_init=pol_in, mask_input=l_mask_in, grad_clipping=10.) # (B,H,D)
         pol_out = L.get_output(l_pol_rnn)[:,-1,:] # (B,D)
-        l_den_in = L.ReshapeLayer(l_pol_rnn, 
-                (turn_mask.shape[0]*turn_mask.shape[1], n_hid)) # (BH,D)
-        l_out = L.DenseLayer(l_den_in, self.out_size,
-                nonlinearity=lasagne.nonlinearities.softmax) # (BH,A)
+        l_den_in = L.ReshapeLayer(l_pol_rnn, (turn_mask.shape[0]*turn_mask.shape[1], n_hid)) # (BH,D)
+        l_out = L.DenseLayer(l_den_in, self.out_size, nonlinearity=lasagne.nonlinearities.softmax) # (BH,A)
         # A 表示Action sample size！
 
         self.network = l_out
@@ -333,18 +326,16 @@ class E2ERLAgent:
         log_probs = T.log(out_probs)
         act_probs = (log_probs*act_mask).sum(axis=2) # (B,H)
         ep_probs = (act_probs*turn_mask).sum(axis=1) # (B,)
-        H_probs = -T.sum(T.sum(out_probs*log_probs,axis=2),axis=1) # Entropy
+        H_probs = -T.sum(T.sum(out_probs*log_probs,axis=2),axis=1) # Entropy, (B,)
         self.act_loss = -T.mean(ep_probs*reward_var)
         self.db_loss = -T.mean(log_db_probs*reward_var)
         # reg_loss是正则化项，但是论文里并没提到，这是因为ment默认值为0
         self.reg_loss = -T.mean(ment*H_probs)
         self.loss = self.act_loss + self.db_loss + self.reg_loss
 
-        self.inps = [input_var, turn_mask, act_mask, reward_var, db_index_var, db_index_switch,
-                pol_in] + hid_in_vars   # inputs
+        self.inps = [input_var, turn_mask, act_mask, reward_var, db_index_var, db_index_switch, pol_in] + hid_in_vars   # inputs
         self.obj_fn = theano.function(self.inps, self.loss, on_unused_input='warn')
-        self.act_fn = theano.function([input_var,turn_mask,pol_in]+hid_in_vars,
-                [out_probs,p_db,pol_out]+pu_vars+phi_vars+hid_out_vars, on_unused_input='warn')
+        self.act_fn = theano.function([input_var,turn_mask,pol_in]+hid_in_vars, [out_probs,p_db,pol_out]+pu_vars+phi_vars+hid_out_vars, on_unused_input='warn')
         self.debug_fn = theano.function(self.inps, [probs, p_db, self.loss], on_unused_input='warn')
         self._rl_train_fn(self.learning_rate)
 
@@ -394,26 +385,26 @@ class E2ERLAgent:
         训练模型
         :param inp: input
         :param tur: turn
-        :param act:
+        :param act: action
         :param rew: reward
-        :param db: database
-        :param dbs:
-        :param pin:
-        :param hin:
-        :return:
+        :param db: episode的每个turn后agent给用户推荐的答案
+        :param dbs: 上述的答案是否有效，作为开关
+        :param pin: current policy RNN hidden state
+        :param hin: current BF RNN hidden state
+        :return: RL的三部分的loss
         '''
         return self.train_fn(inp, tur, act, rew, db, dbs, pin, *hin)
 
     def sl_train(self, inp, tur, act, pin, ptargets, phitargets, hin):
         '''
         训练初期使用SL的方式训练模型，监督信号是手工计算的p和q
-        :param inp:
-        :param tur:
-        :param act:
-        :param pin:
+        :param inp: input
+        :param tur: turn
+        :param act: action
+        :param pin: current policy RNN hidden state
         :param ptargets: 手工计算的p
         :param phitargets: 手工计算的q
-        :param hin:
+        :param hin: current BF RNN hidden state
         :return: 返回计算得到的loss，并更新参数
         '''
         return self.sl_train_fn(inp, tur, act, pin, *ptargets+phitargets+hin)
@@ -421,26 +412,26 @@ class E2ERLAgent:
     def evaluate(self, inp, tur, act, rew, db, dbs, pin, hin):
         '''
         通过计算模型的loss评测模型
-        :param inp:
-        :param tur:
-        :param act:
-        :param rew:
-        :param db:
-        :param dbs:
-        :param pin:
-        :param hin:
+        :param inp: input，原始特征
+        :param tur: turn
+        :param act: action
+        :param rew: reward
+        :param db:episode的每个turn后agent给用户推荐的答案
+        :param dbs: 上述的答案是否有效，作为开关
+        :param pin: current policy RNN hidden state
+        :param hin: current BF RNN hidden state
         :return: 返回模型的loss，不更新参数
         '''
         return self.obj_fn(inp, tur, act, rew, db, dbs, pin, *hin)
 
     def act(self, inp, pin, hin, mode='sample'):
         '''
-        将输入数据到模型中，为训练和测试分别抽样得到后续的action和更新的p，q，RNN的隐状态
+        将输入数据到模型中，为训练和测试分别抽样得到后续的action并更新的p，q，RNN的隐状态
         :param inp: input，原始特征，(B, H, |Grams + slots|)
-        :param pin: current policy state
-        :param hin: current hidden state
+        :param pin: current policy RNN hidden state
+        :param hin: current BF RNN hidden state
         :param mode: 训练时设为"sample"，测试时设为"max"
-        :return:
+        :return: 抽样得到的action和db的记录，db的概率（用户对于每一行感兴趣的概率）,policy 和 Belief部分RNN的输出状态、每个slot的p和q
         '''
         tur = np.ones((inp.shape[0],inp.shape[1])).astype('int8') # (B,H)
         outs = self.act_fn(inp, tur, pin, *hin)
@@ -495,11 +486,11 @@ class E2ERLAgent:
         :param turn: 一个episode的轮次列表
         :param act: 一个episode中agent的action列表
         :param rew: 一个episode中agent的reward列表
-        :param db:
-        :param dbs:
+        :param db: 当前episode的每个turn的输出的答案
+        :param dbs: 当前episode的每个turn是否输出了答案，如果没有为0表示该turn关闭，如果为1表示开启
         :param ptargets: 一个episode中手工计算的p列表
         :param phitargets: 一个episode中手工计算的q列表
-        :return:
+        :return: None，原地修改各个pool
         '''
         self.input_pool.append(inp)
         self.actmask_pool.append(act)
@@ -512,8 +503,9 @@ class E2ERLAgent:
 
     def _get_minibatch(self, N):
         '''
-        对话过程中是episode一个接一个产生的，此时的B=1。模型更新时则是采用最新的batch_size个episode用于更新参数，此时B=128
-        :param N: Table的行数/记录条数
+        对话过程中是episode一个接一个产生的，此时的B=1。模型更新时则是采用最新的batch_size个episode用于更新参数，此时B=128。
+        input_pool是一个capacity为batch_size的deque，无论deque是否满了，本函数都将input_pool进行shuffle，将pool中存储的数据用于更新模型参数
+        :param N: batch_size，
         :return: 重新抽样得到的数据
         '''
         n = min(N, len(self.input_pool))
