@@ -31,17 +31,17 @@ class RuleSimulator:
             dk_prob=0., sub_prob=0., max_first_turn=5):
         '''
 
-        :param movie_dict:
-        :param act_set:
-        :param slot_set:
-        :param start_set:
+        :param movie_dict: 每个slot的value set，missing value的ID和token到value ID set的dict
+        :param act_set: 可选的action集合
+        :param slot_set: 所有的7个slot
+        :param start_set: None
         :param max_turn: max turn in one dialog episode, 20 by default
         :param nlg: natural language generator
         :param err_prob: the probability of the user simulator corrupting a slot value
-        :param db: database
+        :param db: database（db_full）
         :param dk_prob: the probability that user simulator does not know a slot value
         :param sub_prob: the probability that user simulator substitutes a slot value
-        :param max_first_turn:
+        :param max_first_turn: 每个episode开始的第一个turn用户最多可以告知agent几个slot的值
         '''
         self.max_turn = dialog_config.MAX_TURN
         self.movie_dict = movie_dict
@@ -111,6 +111,7 @@ class RuleSimulator:
             self.goal['inform_slots'] = {}
             known_slots = [s for i,s in enumerate(dialog_config.inform_slots) 
                     if self.database.tuples[self.goal['target']][i]!='UNK']
+            # known_slots就是target record中所有可以inform的slot中value不为UNK的slot name
             # # 查看Unicode对于判断语句的影响
             # print "-" * 100 + "\n"
             # print "known slots: "
@@ -124,8 +125,7 @@ class RuleSimulator:
             # known_slots 是database中target record所有已知的所有slot及值
 
             care_about = random.sample(known_slots, int(self.dk_prob*len(known_slots)))
-            # 从数据库中已知slot的value的known_slots中随机抽取一部分座位用户感兴趣的care_about
-            # TODO: known slots, inform slots, care about, don't know slots都是什么含义？各有什么作用？
+            # 从target record的known_slots中随机抽取一部分作为用户感兴趣的care_about，这部分slots会作为用户初始查询的根据
             # 填充target的相关slot到goal的inform_slots中，用户关心的slot填充的一定是正确的，但是其余的都不填充
             for i,s in enumerate(self.database.slots):
                 if s not in dialog_config.inform_slots: continue
@@ -188,7 +188,7 @@ class RuleSimulator:
         '''
         用户根据agent的输出决定什么样用户采取什么样的操作，操作就是修改对话状态。
         如果agent选择的action是inform，则根据目标记录的最终排序确定对话成功还是失败，并且分配不同的reward
-        如果agent选择action是request，
+        如果agent选择action是request，判断agent request的slot是否在goal的inform slot里面，如果在就把state中里面inform slot的值填上
         :param state: sys_action，dict，包括对话轮次turn,request slots, p, q，对话动作diaact
         :return: 新的对话状态，即用户对话状态
         '''

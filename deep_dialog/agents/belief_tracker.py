@@ -21,7 +21,7 @@ class BeliefTracker:
     def _search_slots(self, s_t):
         '''
         在用户输入中查找出现的slot名称，这里已经转为了token操作
-        :param s_t: 用户输入的token化结果
+        :param s_t: 用户输入的句子分词后得到的token list
         :return: 匹配统计结果
         '''
         matches = {}
@@ -49,9 +49,10 @@ class BeliefTracker:
                         matches[slot][vi] += 1.
             for vi,f in matches[slot].iteritems():
                 val = self.movie_dict.dict[slot][vi]
-                # TODO: 中文版一定要删掉nltk的东西
-                print(nltk.word_tokenize(val))
-                matches[slot][vi] = f/len(nltk.word_tokenize(val))
+                # # TODO: 中文版一定要删掉nltk的东西
+                # print(nltk.word_tokenize(val))
+                # matches[slot][vi] = f/len(nltk.word_tokenize(val))
+                matches[slot][vi] = f / len(to_tokens(val))
         print('-' * 100)
         return matches
 
@@ -79,10 +80,12 @@ class BeliefTracker:
                     self.state['dont_care'].add(slot)
             else:
                 for y, match in values.iteritems():
+                    # match记录的是支持度这样一个类似的概念
                     #y = self.movie_dict.dict[slot].index(val)
                     if verbose:
                         v = self.movie_dict.dict[slot][y]
-                        print 'Detected %s' %v.encode("utf8") if v is not None and type(v) == unicode else v, ' update = ', match
+                        print "检测到：{}, 更新置信度：{}".format(v.encode("utf8") if v is not None and type(v) == unicode else v, match)
+                        # print 'Detected %s' %v.encode("utf8") if v is not None and type(v) == unicode else v, ' update = ', match
                     if matched and requested:
                         alpha = upd*(match + 1. + slot_match[slot])
                     elif matched and not requested:
@@ -92,7 +95,7 @@ class BeliefTracker:
                     else:
                         alpha = upd*match
                     self.state['inform_slots'][slot][y] += alpha
-                    # TODO: inform_slots到底是记录什么的？为什么要乘上10？
+                    # inform_slots记录的其实是每个slot的每个value的已知程度，用于手工计算p，同理dont_care用于手工计算q
                 self.state['slot_tracker'].add(slot)
 
     def _init_beliefs(self):

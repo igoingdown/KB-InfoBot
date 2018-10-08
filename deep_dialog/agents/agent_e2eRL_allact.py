@@ -167,17 +167,16 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         self.state['slot_tracker'] = set()
         self.state['dont_care'] = set()
         p_db_i = (1./self.state['database'].N)*np.ones((self.state['database'].N,))
-        self.state['init_entropy'] = calc_entropies(self.state['inform_slots'], p_db_i, 
-                self.state['database'])
-        self.state['inputs'] = []
-        self.state['actions'] = []
-        self.state['rewards'] = []
-        self.state['indices'] = []   # 保存inform action之后的概率前几名
-        self.state['ptargets'] = []
-        self.state['phitargets'] = []
+        self.state['init_entropy'] = calc_entropies(self.state['inform_slots'], p_db_i, self.state['database'])
+        self.state['inputs'] = [] # 保存一个episode的每个turn的用户输入特征
+        self.state['actions'] = [] # 保存一个episode的每个turn agent选择的action
+        self.state['rewards'] = [] # 保存一个episode的每个turn agent给出的action的reward
+        self.state['indices'] = []  # 保存inform action之后的概率前几名
+        self.state['ptargets'] = [] # 保存一个episode的每个turn手工计算的p
+        self.state['phitargets'] = [] # 保存一个episode的每个turn手工计算的q
         self.state['hid_state'] = [np.zeros((1,self.r_hid)).astype('float32') \
-                for s in dialog_config.inform_slots]
-        self.state['pol_state'] = np.zeros((1,self.n_hid)).astype('float32')
+                for s in dialog_config.inform_slots] # 保存一个episode的每个turn开始时BF RNN的输入状态，每个slot都有一个
+        self.state['pol_state'] = np.zeros((1,self.n_hid)).astype('float32') # 保存一个episode的每个turn开始时Pol网络RNN的输入状态
 
     def next(self, user_action, verbose=False):
         '''

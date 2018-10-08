@@ -20,7 +20,7 @@ class SoftDB:
         induce distribution over DB based on current beliefs over slots
         '''
         probs = {}
-        p_s = np.zeros((self.state['database'].N, len(self.state['database'].slots))).astype('float32')  # N * |S|
+        p_s = np.zeros((self.state['database'].N, len(self.state['database'].slots))).astype('float32')  # (N,|S|)
         for i,s in enumerate(self.state['database'].slots):
             p = self.state['inform_slots'][s]/self.state['inform_slots'][s].sum() # slot[i]下的每个value的概率，不含UNK
             n = self.state['database'].inv_counts[s] # slot[i]下每个value的的出现频数

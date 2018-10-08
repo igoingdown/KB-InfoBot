@@ -98,7 +98,7 @@ from deep_dialog.usersims import RuleSimulator, TemplateNLG, S2SNLG
 from deep_dialog.objects import SlotReader
 from deep_dialog import dialog_config
 
-# 读取预先定义好的act类型，并编号
+# 读取预先定义好的act类型request，inform，thanks，deny，并编号
 act_set = DictReader()
 act_set.load_dict_from_file(params['act_set'])
 
@@ -125,7 +125,7 @@ nlg = S2SNLG(template_path, params['nlg_slots_path'], params['nlg_model_path'],
 # 构造用户模拟器
 user_sim = RuleSimulator(movie_kb, act_set, slot_set, None, max_turn, nlg, err_prob, db_full,
         1.-dk_prob, sub_prob=params['sub_prob'], max_first_turn=params['max_first_turn'])
-
+# TODO: 为什么用户模拟器用db_full而agent的db用的是db_inc？
 # 根据参数agent_type构建用于训练的agent和用于evaluate的agent
 if agent_type == 'simple-rl-soft':
     agent = AgentSimpleRLAllAct(movie_kb, act_set, slot_set, db_inc, _reload=_reload,
