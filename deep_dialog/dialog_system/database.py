@@ -34,20 +34,30 @@ class Database:
         :param path: 数据集的path
         :return: None
         '''
-        try:
-            fi = io.open(path,'r')
-            self.slots = fi.readline().rstrip().split('\t')[1:]
-            tupl = [line.rstrip().split('\t') for line in fi]
-            self.labels = [t[0] for t in tupl]
-            self.tuples = [t[1:] for t in tupl]
-            fi.close()
-        except UnicodeDecodeError:
-            fi = open(path,'r')
-            self.slots = fi.readline().rstrip().split('\t')[1:]
-            tupl = [line.rstrip().split('\t') for line in fi]
-            self.labels = [t[0] for t in tupl]
-            self.tuples = [t[1:] for t in tupl]
-            fi.close()
+        with open(path, 'r') as f:
+            self.slots = [x.decode("utf8") for x in f.readline().rstrip().split('\t')[1:]]
+            self.labels = []
+            self.tuples = []
+            for line in f:
+                tuple = [x.decode("utf8") for x in line.rstrip().split('\t')]
+                self.labels.append(tuple[0])
+                self.tuples.append(tuple[1:])
+        # try:
+        #     fi = io.open(path,'r')
+        #     self.slots = fi.readline().rstrip().split('\t')[1:]
+        #     tupl = [line.rstrip().split('\t') for line in fi]
+        #     self.labels = [t[0] for t in tupl]
+        #     self.tuples = [t[1:] for t in tupl]
+        #     fi.close()
+        # except UnicodeDecodeError:
+        #     fi = open(path,'r')
+        #     self.slots = fi.readline().rstrip().split('\t')[1:]
+        #     tupl = [line.rstrip().split('\t') for line in fi]
+        #
+        #     self.labels = [t[0] for t in tupl]
+        #     self.tuples = [t[1:] for t in tupl]
+        #     fi.close()
+
         self.N = len(self.tuples)
 
     def _shuffle(self):
