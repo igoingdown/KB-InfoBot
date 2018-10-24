@@ -117,7 +117,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
 
     def initialize_episode(self):
         '''
-        每次开启一次新的对话(episode)之前，在这里更新agent的参数
+        开启一次新的对话(episode)之前，自从上次更新参数后，是否进行了足够batch_size个episode的对话，如果足够就更新agent的参数
         在user simulator初始化之后，根据对话状态(user_action)初始化agent
         :return: None
         '''
@@ -171,7 +171,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         self.state['inputs'] = [] # 保存一个episode的每个turn的用户输入特征
         self.state['actions'] = [] # 保存一个episode的每个turn agent选择的action
         self.state['rewards'] = [] # 保存一个episode的每个turn agent给出的action的reward
-        self.state['indices'] = []  # 保存inform action之后的概率前几名
+        self.state['indices'] = []  # 保存inform action之后的概率前几名，不是inform action，就是一个空的列表
         self.state['ptargets'] = [] # 保存一个episode的每个turn手工计算的p
         self.state['phitargets'] = [] # 保存一个episode的每个turn手工计算的q
         self.state['hid_state'] = [np.zeros((1,self.r_hid)).astype('float32') \
@@ -187,6 +187,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         '''
         self.state['turn'] += 1
 
+        # TODO: 改为embedding之后，这段要全部改掉
         p_vector = np.zeros((self.in_size,)).astype('float32')   # （|Grams|+|Slots|, )
         p_vector[:self.feat_extractor.n] = self.feat_extractor.featurize(user_action['nl_sentence'])
         if self.state['turn']>1:
@@ -285,7 +286,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
     def _rule_act(self, p, db_probs):
         '''
         基于规则选择action，主要是根据熵的限度和每个slot被询问的次数，优先考虑整个table的entropy，然后再考虑每个slot的entropy和询问次数
-        :param p: (B, H, |Slots|)
+        :param p: (B, H, |Slots|)，前|Slots|-1个值是可以询问的slot的熵，最后一个是整个DB的概率分布的熵
         :param db_probs: (N,)
         :return: 选出的action，分request和inform，request需要指定具体的slot，inform不需要，还有act记录action的数据结构
         '''
@@ -295,7 +296,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         act['target'] = []
 
         if p[0,0,-1] < self.tr:
-            # database的熵小于一定的值，直接告知用户答案即可，不许要进行其他对话
+            # database的熵小于一定的值，直接告知用户答案即可，不需要再进行其他对话，因为有几条记录的概率已经特别突出了
             # agent reasonable confident, inform
             act['diaact'] = 'inform'
             act['target'] = self._inform(db_probs)
@@ -307,7 +308,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
             for (s,h) in sorted_entropies:
                 if H_slots[s]<self.frac*self.state['init_entropy'][s] or H_slots[s]<self.ts or \
                         self.state['num_requests'][s] >= self.max_req:
-                    # 如果一个slot的的entropy小于一定的初始程度的一部分或小于slot的entropy下限或询问次数大于一定程度，则跳过
+                    # 如果一个slot的的entropy小于一定的初始程度的一部分或小于slot的entropy下限或询问次数大于一定程度，则不再询问
                     continue
                 act['diaact'] = 'request'
                 act['request_slots'][s] = 'UNK'

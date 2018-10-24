@@ -7,7 +7,7 @@ def standardize(arr):
     '''
     这个函数真的是空有其表！
     :param arr: 输入特征向量
-    :return: 直接输入特征向量，呵呵呵！
+    :return: 直接输出特征向量！
     '''
     return arr
 

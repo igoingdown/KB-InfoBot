@@ -200,7 +200,7 @@ def eval_agent(ite, max_perf, best=False):
     '''
     num_iter = 2000
     nn = np.sqrt(num_iter)
-    # nn用于计算2000轮对话测试结果的标注差时作分母
+    # nn用于计算2000轮对话测试结果的标准差时作分母
     if best: agent_eval.load_model(dialog_config.MODEL_PATH+'best_'+agent_eval._name)
     else: agent_eval.load_model(dialog_config.MODEL_PATH+agent_eval._name)
     all_rewards = np.zeros((num_iter,))

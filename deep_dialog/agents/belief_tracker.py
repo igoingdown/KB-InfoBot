@@ -49,7 +49,7 @@ class BeliefTracker:
                         matches[slot][vi] += 1.
             for vi,f in matches[slot].iteritems():
                 val = self.movie_dict.dict[slot][vi]
-                # # TODO: 中文版一定要删掉nltk的东西
+                # 中文版删掉了nltk的东西
                 # print(nltk.word_tokenize(val))
                 # matches[slot][vi] = f/len(nltk.word_tokenize(val))
                 matches[slot][vi] = f / len(to_tokens(val))

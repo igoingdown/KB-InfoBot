@@ -103,11 +103,18 @@ dk_prob = params['dontknow_prob']
 N = params['N']
 
 datadir = './data/' + params['dataset']
-db_full_path = datadir + '/db.txt'
-db_inc_path = datadir + '/incomplete_db_%.2f.txt' %params['unk']
-dict_path = datadir + '/dicts.json'
-slot_path = datadir + '/slot_set.txt'
-corpus_path = './data/corpora/' + params['dataset'] + '_corpus.txt'
+
+# 将db、slot和corpus都切换到中文
+#db_full_path = datadir + '/db.txt'
+# db_inc_path = datadir + '/incomplete_db_%.2f.txt' %params['unk']
+# dict_path = datadir + '/dicts.json'
+# slot_path = datadir + '/slot_set.txt'
+# corpus_path = './data/corpora/' + params['dataset'] + '_corpus.txt'
+slot_path = datadir + '/slot_set_chinese.txt'
+db_full_path = datadir + '/chinese_db.txt'
+db_inc_path = datadir + '/incomplete_chinese_db_%.2f.txt' %params['unk']
+dict_path = datadir + '/chinese_dicts.json'
+corpus_path = './data/corpora/' + params['dataset'] + '_chinese_corpus.txt'
 
 from deep_dialog.dialog_system import DialogManager, MovieDict, DictReader, Database
 from deep_dialog.agents import AgentActRule, AgentNLRuleSoft, AgentNLRuleHard, AgentNLRuleNoDB, AgentSimpleRLAllAct, AgentSimpleRLAllActHardDB, AgentSimpleRLAllActNoDB, AgentE2ERLAllAct
@@ -134,7 +141,10 @@ print u"载入模型中，请稍后……"
 agent_type = agent_map[params['agent']]
 for k,v in agent_params[agent_type].iteritems():
     params[k] = v
-params['model_name'] = 'best_'+agent_type+'_imdb.m'
+
+# model的那么变为自己训练的model的那么
+# params['model_name'] = 'best_'+agent_type+'_imdb.m'
+params['model_name'] = 'best_e2e_soft_example.m'
 
 if agent_type == 'simple-rl-soft':
     agent = AgentSimpleRLAllAct(movie_kb, act_set, slot_set, db_inc, train=False, _reload=True,

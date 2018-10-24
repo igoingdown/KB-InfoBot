@@ -30,6 +30,7 @@ class FeatureExtractor:
         self.N = N
         self.embedding_path = embedding_path
         self.embedding_vocab_t2n, self.embedding_vectors = torchwordemb.load_word2vec_text(self.embedding_path)
+        self.embedding_size = self.embedding_vectors.size()[-1]
         save_path = db_path.rsplit('/',1)[0] + '/fdict_%d.p'%N
         if os.path.isfile(save_path):
             # load pre-dumped grams and N from file

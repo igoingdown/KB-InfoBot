@@ -83,8 +83,9 @@ def aggregate_rewards(rewards,discount):
     return running_add
 
 class E2ERLAgent:
-    def _init_model(self, in_size, out_size, slot_sizes, db, \
-            n_hid=10, learning_rate_sl=0.005, learning_rate_rl=0.005, batch_size=32, ment=0.1, \
+    #TODO: 改到embedding之后，in_size要做适当修改
+    def _init_model(self, in_size, out_size, slot_sizes, db,
+            n_hid=10, learning_rate_sl=0.005, learning_rate_rl=0.005, batch_size=32, ment=0.1,
             input_type='full', sl='e2e', rl='e2e'):
         '''
         初始化model，后面的工作只需要调用其中的函数或者查看其中的属性即可
@@ -429,7 +430,7 @@ class E2ERLAgent:
 
     def act(self, inp, pin, hin, mode='sample'):
         '''
-        将输入数据到模型中，为训练和测试分别抽样得到后续的action并更新的p，q，RNN的隐状态
+        将输入数据到模型中，为训练和测试分别抽样得到后续的action并更新的p，q以及RNN的隐状态，这些都是对话状态！
         :param inp: input，原始特征，(B, H, |Grams + slots|)
         :param pin: current policy RNN hidden state
         :param hin: current BF RNN hidden state
@@ -506,9 +507,10 @@ class E2ERLAgent:
 
     def _get_minibatch(self, N):
         '''
-        对话过程中是episode一个接一个产生的，此时的B=1。模型更新时则是采用最新的batch_size个episode用于更新参数，此时B=128。
-        input_pool是一个capacity为batch_size的deque，无论deque是否满了，本函数都将input_pool进行shuffle，将pool中存储的数据用于更新模型参数
-        :param N: batch_size，
+        对话过程中是episode一个接一个产生的，此时的B=1。模型更新时则是采用最新的最多batch_size个episode用于更新参数，此时B=128。
+        input_pool是一个capacity为batch_size的deque，无论deque是否满了，本函数都将input_pool进行shuffle，
+        将pool中存储的数据用于更新模型参数
+        :param N: batch_size
         :return: 重新抽样得到的数据
         '''
         n = min(N, len(self.input_pool))
