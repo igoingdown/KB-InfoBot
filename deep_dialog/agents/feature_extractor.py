@@ -10,12 +10,26 @@ import numpy as np
 import cPickle as pkl
 import os.path
 import string
+import torch
+import torchwordemb
 
 from deep_dialog.tools import to_tokens
 
+def test_torch_load_word2vec(embedding_path):
+    '''
+    测试torch在load word2vec模型时是不是好用，事实证明很好用，其实跟word2vec内嵌的API效果相同。
+    :param config: 配置项超参数
+    :return: None
+    '''
+    vocab, embedding  = torchwordemb.load_word2vec_text(embedding_path)
+    print(embedding[vocab[u'中国']])
+
+
 class FeatureExtractor:
-    def __init__(self, corpus_path, db_path, N=1):
+    def __init__(self, corpus_path, db_path, embedding_path='../data/embedding_model_t2s/vector_t2s', N=1):
         self.N = N
+        self.embedding_path = embedding_path
+        self.embedding_vocab_t2n, self.embedding_vectors = torchwordemb.load_word2vec_text(self.embedding_path)
         save_path = db_path.rsplit('/',1)[0] + '/fdict_%d.p'%N
         if os.path.isfile(save_path):
             # load pre-dumped grams and N from file
@@ -137,11 +151,18 @@ class FeatureExtractor:
         '''
         vec = np.zeros((len(self.grams),)).astype('float32')
 
+        embeddings = []
+        UNK_EMBEDDING = self.embedding_vectors.mean(0).squeeze()
+        BAK_EMBEDDING = torch.zeros(UNK_EMBEDDING.size())
         # 转到中文之后，N-Gram不再必要了
         for ngram in to_tokens(text):
             if ngram in self.grams:
                 vec[self.grams[ngram]] += 1.
-
+            if ngram in self.embedding_vocab_t2n:
+                embeddings.append(self.embedding_vectors[self.embedding_vocab_t2n[ngram]])
+            else:
+                embeddings.append(UNK_EMBEDDING)
+        average_embedding = torch.cat([x.view(1, x.size()) for x in embeddings], 0).mean(0).squeeze()
         # tokens = to_tokens(text)
         # for i in range(len(tokens)):
         #     for t in range(self.N):

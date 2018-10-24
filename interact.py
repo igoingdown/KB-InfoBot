@@ -1,46 +1,59 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 '''
 '''
 
-WELCOME="""\nHello and welcome to the InfoBot! Please take a moment to read the instructions below on how to interact with the system.
 
-BACKGROUND: The InfoBot helps users search a database for entities (in our case movies) based on its attributes (in our case any of actor, director, release-year, critic-rating, mpaa-rating). 
 
-INSTRUCTIONS: In each interaction a movie will be selected at random from the database and presented to you, along with some of its attributes. To simulate a real-world scenario where the user may not know all attribute values perfectly, multiple noisy values may be presented (separated by ','). For example, the dialog may start as follows:
+# WELCOME="""\nHello and welcome to the InfoBot! Please take a moment to read the instructions below on how to interact with the system.
+#
+# BACKGROUND: The InfoBot helps users search a database for entities (in our case movies) based on its attributes (in our case any of actor, director, release-year, critic-rating, mpaa-rating).
+#
+# INSTRUCTIONS: In each interaction a movie will be selected at random from the database and presented to you, along with some of its attributes. To simulate a real-world scenario where the user may not know all attribute values perfectly, multiple noisy values may be presented (separated by ','). For example, the dialog may start as follows:
+#
+#     turn  0
+#     agent action:  Hi! I am Info-Bot. I can help you search for movies if you tell me their attributes!
+#     target  movie :  louis c.k.: shameless
+#     known slots:  release_year={ 2007 } critic_rating={ 6.5 , 8.7 } actor={} director={} mpaa_rating={ tv-ma } genre={}
+#     your input:
+#
+# Only some of the slot values will be provided. In the above example critic-rating may be either 6.5 or 8.7, please select one value when informing the agent. At this stage you must initiate the dialog by asking the InfoBot for a movie which matches some of the provided attributes. You may specify all attributes in one go or only a subset of them. Please frame your inputs in natural language and try to provide a diverse vareity of inputs. For example:
+#
+#     your input: which movie has critic rating 6.5?
+#
+# In each subsequent turn, the agent will either request for an attribute or inform results from the database. In case of the latter the dialog will end. A typical turn may look like:
+#
+#     turn  1
+#     agent action:  request actor
+#     target  movie :  louis c.k.: shameless
+#     known slots:  release_year={ 2007 } critic_rating={ 6.5 , 8.7 } actor={} director={} mpaa_rating={ tv-ma } genre={}
+#     your input:
+#
+# Here the agent is requesting for the actor of the movie. Since the actor is not in one of the known slots, you may respond by saying:
+#
+#     your input: i dont know
+#
+# This is just an example, you may respond anyway you like. Be creative!
+#
+# At the end of the dialog, the agent will inform the top 5 matches from the database, which will be checked if they contain the correct movie:
+#
+#     agent results:  night catches us, spider man 3, precious, she's out of my league, pineapple
+#     target movie rank =  169
+#     failed dialog
+#     number of turns =  4
+#
+# This is it. After this a new dialog will be initiated.
+#
+# Type 'quit' to end the current dialog (it will be considered a failure). Press Ctrl-C at any time to exit the application."""
+#
 
-    turn  0
-    agent action:  Hi! I am Info-Bot. I can help you search for movies if you tell me their attributes!
-    target  movie :  louis c.k.: shameless
-    known slots:  release_year={ 2007 } critic_rating={ 6.5 , 8.7 } actor={} director={} mpaa_rating={ tv-ma } genre={}
-    your input: 
-
-Only some of the slot values will be provided. In the above example critic-rating may be either 6.5 or 8.7, please select one value when informing the agent. At this stage you must initiate the dialog by asking the InfoBot for a movie which matches some of the provided attributes. You may specify all attributes in one go or only a subset of them. Please frame your inputs in natural language and try to provide a diverse vareity of inputs. For example:
-
-    your input: which movie has critic rating 6.5?
-
-In each subsequent turn, the agent will either request for an attribute or inform results from the database. In case of the latter the dialog will end. A typical turn may look like:
-
-    turn  1
-    agent action:  request actor
-    target  movie :  louis c.k.: shameless
-    known slots:  release_year={ 2007 } critic_rating={ 6.5 , 8.7 } actor={} director={} mpaa_rating={ tv-ma } genre={}
-    your input:
-
-Here the agent is requesting for the actor of the movie. Since the actor is not in one of the known slots, you may respond by saying:
-
-    your input: i dont know
-
-This is just an example, you may respond anyway you like. Be creative! 
-
-At the end of the dialog, the agent will inform the top 5 matches from the database, which will be checked if they contain the correct movie:
-
-    agent results:  night catches us, spider man 3, precious, she's out of my league, pineapple
-    target movie rank =  169
-    failed dialog
-    number of turns =  4
-
-This is it. After this a new dialog will be initiated. 
-
-Type 'quit' to end the current dialog (it will be considered a failure). Press Ctrl-C at any time to exit the application."""
+WELCOME = u'''
+你好，欢迎登陆本系统！本系统可以帮助用户基于属性值查询背景知识库中的记录，请仔细阅读以下说明：
+1. 每次对话开始时，系统会随机选择一条数据作为目标答案，一遍检测系统的有效性；并提供掺入了噪音的属性值用于提示。
+2. 之后就请按照系统的提示来尽情体验吧！
+3. 输入 'quit' 可以随时结束本次对话。
+'''
 
 import argparse, json, shutil, sys, os, random, copy
 import numpy as np
@@ -111,13 +124,13 @@ movie_kb = MovieDict(dict_path)
 db_full = Database(db_full_path, movie_kb, name=params['dataset'])
 db_inc = Database(db_inc_path, movie_kb, name='incomplete%.2f_'%params['unk']+params['dataset'])
 
-user_sim = CmdUser(movie_kb, act_set, slot_set, None, max_turn, err_prob, db_full, \
+user_sim = CmdUser(movie_kb, act_set, slot_set, None, max_turn, err_prob, db_full,
         dk_prob, sub_prob=params['sub_prob'], max_first_turn=params['max_first_turn'],
         fdict_path = 'data/'+params['db']+'/fdict_2.p')
 
 # load all agents
 print WELCOME
-print "Loading agents... This may take a few minutes"
+print u"载入模型中，请稍后……"
 agent_type = agent_map[params['agent']]
 for k,v in agent_params[agent_type].iteritems():
     params[k] = v
@@ -154,20 +167,20 @@ elif agent_type == 'e2e-rl-soft':
             pol_start=params['pol_start'], tr=params['tr'], ts=params['ts'], frac=params['frac'],
             max_req=params['max_req'], upd=params['upd'], name=params['model_name'])
 else:
-    print "Invalid Agent"
+    print u"系统参数无效"
     sys.exit()
 
-uname = raw_input("Please Enter User Name: ").lower()
+uname = raw_input("请输入您的昵称: ").lower()
 uid = hash(uname)
 
-cdir = "sessions/"+str(uid)+'_'+datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')+"/"
-if not os.path.exists(cdir): os.makedirs(cdir)
-f = open(os.path.join(cdir,'credentials'), 'w')
-f.write(uname)
-f.close()
+cdir = "sessions/" + str(uid) + '_'+ datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')+"/"
+if not os.path.exists(cdir):
+    os.makedirs(cdir)
+with open(os.path.join(cdir,'credentials'), 'w') as f:
+    f.write(uname)
 try:
     for i in range(N):
-        print "-" * 200 + "\nDialog %d" %i
+        print "-" * 200 + "\n第{0}次对话: %d".format(i)
         dia = []
         curr_agent = agent
         dia.append(curr_agent)

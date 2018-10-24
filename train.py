@@ -47,14 +47,14 @@ params = vars(args)
 
 params['act_set'] = './data/dia_acts.txt'
 
-# TODO: 将英文template替换为中文template
+# 将英文template替换为中文template
 # params['template_path'] = './data/templates.p'
 params['template_path'] = './data/templates_chinese.p'
 
 params['nlg_slots_path'] = './data/nlg_slot_set.txt'
 params['nlg_model_path'] = './data/pretrained/lstm_tanh_[1470015675.73]_115_120_0.657.p'
 
-# TODO: 读取agent和data set的相关配置参数,并且加到params中，通过指定特定的agent和data set，减少需要的参数
+# 读取agent和data set的相关配置参数,并且加到params中，通过指定特定的agent和data set，减少需要的参数
 config = importlib.import_module('settings.config_'+params['db'])
 agent_params = config.agent_params
 dataset_params = config.dataset_params
@@ -75,11 +75,11 @@ N = params['N']
 _reload = bool(params['reload'])
 
 datadir = './data/' + params['dataset']
-# TODO: Slot set也要换成中文的
+# Slot set也要换成中文的
 # slot_path = datadir + '/slot_set.txt'
 slot_path = datadir + '/slot_set_chinese.txt'
 
-# TODO: 将英文DB替换为中文DB
+# 将英文DB替换为中文DB
 # db_full_path = datadir + '/db.txt'
 # db_inc_path = datadir + '/incomplete_db_%.2f.txt' %params['unk']
 # dict_path = datadir + '/dicts.json'
@@ -87,7 +87,7 @@ db_full_path = datadir + '/chinese_db.txt'
 db_inc_path = datadir + '/incomplete_chinese_db_%.2f.txt' %params['unk']
 dict_path = datadir + '/chinese_dicts.json'
 
-# TODO: 把corpus也要切换到中文。
+# 把corpus也要切换到中文。
 # corpus_path = './data/corpora/' + params['dataset'] + '_corpus.txt'
 corpus_path = './data/corpora/' + params['dataset'] + '_chinese_corpus.txt'
 
@@ -108,7 +108,7 @@ act_set.load_dict_from_file(params['act_set'])
 slot_set = SlotReader(slot_path)
 
 # 读取dict_path中已经为每个slot构建的dict
-# TODO: 中文环境的dict已经生成，使用豆瓣top250的数据
+# 中文环境的dict已经生成，使用豆瓣top250的数据
 # dict_path中保存的是数据集上每个槽到槽中值的list的映射，是一个2进制文件，必须通过2进制读取
 movie_kb = MovieDict(dict_path)
 # movie_kb实际包含了数据集上每个slot到slot value set的映射、每个slot到slot value set长度(Missing Value ID)的映射
@@ -200,7 +200,7 @@ def eval_agent(ite, max_perf, best=False):
     '''
     num_iter = 2000
     nn = np.sqrt(num_iter)
-    # nn用于计算2000轮对话测试结果的标注差
+    # nn用于计算2000轮对话测试结果的标注差时作分母
     if best: agent_eval.load_model(dialog_config.MODEL_PATH+'best_'+agent_eval._name)
     else: agent_eval.load_model(dialog_config.MODEL_PATH+agent_eval._name)
     all_rewards = np.zeros((num_iter,))
