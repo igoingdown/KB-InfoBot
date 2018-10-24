@@ -52,10 +52,10 @@ class Database:
 
     def _shuffle(self):
         # match slot order to config
-        for s in dialog_config.inform_slots:
-            print s
-        for s in self.slots:
-            print s
+        for v in dialog_config.inform_slots:
+            print v.encode("utf8") if v is not None and type(v) == unicode else v
+        for v in self.slots:
+            print v.encode("utf8") if v is not None and type(v) == unicode else v
         index = [self.slots.index(s) for s in dialog_config.inform_slots]
         self.slots = [self.slots[ii] for ii in index]
         self.tuples = [[row[ii] for ii in index] for row in self.tuples]
