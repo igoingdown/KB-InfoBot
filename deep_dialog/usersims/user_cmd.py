@@ -80,18 +80,11 @@ class CmdUser:
         print '系统动作: ', agent_act
         print '目标 ', DOMAIN_NAME.encode("utf8"), ': ', self.database.labels[self.goal['target']].encode("utf8")
         print 'known slots: ', ' '.join(
-                ['%s={ %s }' %(k.encode("utf8") if k is not None and type(k) == unicode else k ,
+                ['%s={ %s }' %(k.encode("utf8") if k is not None and type(k) == unicode else k,
                                u' , '.join(vv for vv in v).encode("utf8"))
                     for k,v in self.state['inform_slots_noisy'].iteritems()])
 
-        inp = u'请搜索刘德华主演的影片'
-        for i in range(10):
-            try:
-                inp = raw_input('你的输入: ').decode(sys.stdin.encoding or locale.getpreferredencoding(True))
-                print(inp, type(inp))
-                inp = inp.encode("utf8")
-            except Exception as e:
-                print str(e)
+        inp = raw_input('你的输入: ').decode(sys.stdin.encoding or locale.getpreferredencoding(True))
         if not self._vocab_search(inp): return random.choice(GENERIC)
         else: return inp
 
@@ -118,7 +111,7 @@ class CmdUser:
         # 改到中文
         #sent = self.prompt_input('Hi! I am Info-Bot. I can help you search for movies if you tell me their attributes!', 0).lower()
         sent = self.prompt_input('你好，向我提问关于电影的东西吧！',0).lower()
-        sent = sent.decode("utf8")
+        sent = sent.dencode("utf8") if sent is not None and type(sent) == str else sent
         if sent==u'quit': episode_over=True
         else: episode_over=False
         
