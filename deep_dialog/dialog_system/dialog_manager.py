@@ -38,8 +38,8 @@ class DialogManager:
         return self.user_action
 
     def next_turn(self):
-        # TODO: 为了查看对话进程，先开启唠叨模式
-        self.verbose = True
+        # 为了查看对话进程，可以暂时开启唠叨模式
+        # self.verbose = True
         if self.verbose:
             print 'Turn', self.user_action['turn'], 'user action:', self.user_action['diaact']
             print 'inform slots:'
@@ -58,8 +58,8 @@ class DialogManager:
         self.user_action, episode_over, reward = self.user.next(self.sys_actions)
         if episode_over: self.agent.terminate_episode(self.user_action)
         if episode_over and self.verbose:
-            print("Agent Results:")
-            if 'phis' in self.sys_actions: print '\t'.join(['dont-care:']+['%.3f'%s for s in self.sys_actions['phis']])
+            print("系统结果:")
+            if 'phis' in self.sys_actions: print '\t'.join(['不关心概率:']+['%.3f'%s for s in self.sys_actions['phis']])
             if self.sys_actions['target']:
                 for ii in self.sys_actions['target'][:dialog_config.SUCCESS_MAX_RANK]:
                     out = [self.database_incomplete.labels[ii]]
@@ -78,8 +78,8 @@ class DialogManager:
                     # 输出结果，按utf8编码
                     # print('\t'.join([o.encode('latin-1', 'replace') for o in out]))
                     print('\t'.join([v.encode("utf8") if v is not None and type(v) == unicode else v for v in out]))
-        # TODO: 在进行其他操作之前，先将唠叨模式关闭
-        self.verbose = False
+        # 在进行其他操作之前，将唠叨模式关闭
+        # self.verbose = False
         return (episode_over, reward, self.user_action, self.sys_actions)
 
     def check_db(self):

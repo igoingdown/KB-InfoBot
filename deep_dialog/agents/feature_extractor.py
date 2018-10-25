@@ -33,16 +33,16 @@ class FeatureExtractor:
         self.embedding_size = self.embedding_vectors.size()[-1]
         save_path = db_path.rsplit('/',1)[0] + '/fdict_%d.p'%N
         pure_grams_save_path = db_path.rsplit('/',1)[0] + '/fdict_%d.p'%2
-        print(save_path, pure_grams_save_path)
+        # print(save_path, pure_grams_save_path)
         if os.path.isfile(save_path):
             # load pre-dumped grams and N from file
-            print("dict exist")
+            # print("dict exist")
             f = open(save_path, 'rb')
             self.grams = pkl.load(f)
             self.n = pkl.load(f)
             f.close()
         else:
-            print("build dicts")
+            # print("build dicts")
             # if there doesn't exist any pre-dumped file, generate grams from corpus or database text file.
             self.grams = {}
             self.n = 0
@@ -53,7 +53,7 @@ class FeatureExtractor:
             with open(save_path, 'wb') as f:
                 pkl.dump(self.grams, f)
                 pkl.dump(self.n, f)
-        print("initialize vocab size:{}".format(self.n))
+        # print("initialize vocab size:{}".format(self.n))
 
     def _build_vocab_from_db(self, corpus):
         '''
@@ -73,7 +73,7 @@ class FeatureExtractor:
                     tokens = to_tokens(ele)
                     for ngram in tokens:
                         if ngram.strip() != "" and ngram not in self.grams:
-                            print(ngram.encode("utf8") if ngram is not None and type(ngram) == unicode else ngram)
+                            # print(ngram.encode("utf8") if ngram is not None and type(ngram) == unicode else ngram)
                             self.grams[ngram] = self.n
                             self.n += 1
 
@@ -120,7 +120,7 @@ class FeatureExtractor:
                 for ngram in to_tokens(line.strip()):
                     if ngram.strip() != "" and ngram not in self.grams:
                         self.grams[ngram] = self.n
-                        print(ngram.encode("utf8") if ngram is not None and type(ngram) == unicode else ngram)
+                        # print(ngram.encode("utf8") if ngram is not None and type(ngram) == unicode else ngram)
                         self.n += 1
 
         # try:

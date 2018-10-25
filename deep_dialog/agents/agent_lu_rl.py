@@ -123,12 +123,12 @@ class E2ERLAgent:
         unknown = [db.unks[s] for s in dialog_config.inform_slots]
         ids = [db.ids[s] for s in dialog_config.inform_slots]
 
-        print("-" * 100 + '\ndb unknown:')
-        for k, v in db.unks.iteritems():
-            print ('{}:{}'.format(k.encode("utf8") if type(k) == unicode else k,
-                                  v.encode("utf8") if v is not None and type(v) == unicode else v))
-        print("unknown rows: {}".format(unknown))
-        print("-" * 100)
+        # print("-" * 100 + '\ndb unknown:')
+        # for k, v in db.unks.iteritems():
+        #     print ('{}:{}'.format(k.encode("utf8") if type(k) == unicode else k,
+        #                           v.encode("utf8") if v is not None and type(v) == unicode else v))
+        # print("unknown rows: {}".format(unknown))
+        # print("-" * 100)
 
         input_var, turn_mask, act_mask, reward_var = T.ftensor3('in'), T.bmatrix('tm'), T.btensor3('am'), T.fvector('r')
         T_var, N_var = T.as_tensor_variable(table), T.as_tensor_variable(counts)

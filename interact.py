@@ -190,7 +190,7 @@ with open(os.path.join(cdir,'credentials'), 'w') as f:
     f.write(uname)
 try:
     for i in range(N):
-        print "-" * 200 + "\n第{0}次对话: %d".format(i)
+        print "-" * 200 + "\n第{0}次对话:".format(i)
         dia = []
         curr_agent = agent
         dia.append(curr_agent)
