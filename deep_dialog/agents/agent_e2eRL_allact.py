@@ -59,6 +59,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         :param frac: Ratio to initial slot entropy, 一个slot的entropy如果低于这个下限，这个slot就再也不会被问到(request)
         :param name:
         '''
+        print("模型初始化开始")
         self.movie_dict = movie_dict
         self.act_set = act_set
         self.slot_set = slot_set
@@ -92,6 +93,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         self.max_req = max_req
         self.frac = frac
         self.upd = upd
+        print("模型初始化结束")
 
     def _print_progress(self,loss,te,*args):
         self.recent_loss.append(loss)

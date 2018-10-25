@@ -71,24 +71,26 @@ class CmdUser:
         and get NL input '''
     def prompt_input(self, agent_act, turn):
         print ''
-        print 'turn ', str(turn)
-        print 'agent action: ', agent_act
-        print 'target ', DOMAIN_NAME, ': ', self.database.labels[self.goal['target']]
+        print '轮次: {}'.format(turn)
+        print '系统动作: ', agent_act
+        print '目标 ', DOMAIN_NAME.encode("utf8"), ': ', self.database.labels[self.goal['target']].encode("utf8")
         print 'known slots: ', ' '.join(
-                ['%s={ %s }' %(k,' , '.join(vv for vv in v)) 
+                ['%s={ %s }' %(k.encode("utf8") if k is not None and type(k) == unicode else k ,
+                               u' , '.join(vv for vv in v).encode("utf8"))
                     for k,v in self.state['inform_slots_noisy'].iteritems()])
-        inp = raw_input('your input: ')
+
+        inp = raw_input('你的输入: ')
         if not self._vocab_search(inp): return random.choice(GENERIC)
         else: return inp
 
     ''' display agent results at end of dialog '''
     def display_results(self, ranks, reward, turns):
         print ''
-        print 'agent results: ', ', '.join([self.database.labels[ii] for ii in ranks[:5]])
-        print 'target movie rank = ', ranks.index(self.goal['target']) + 1
-        if reward > 0: print 'successful dialog!'
-        else: print 'failed dialog'
-        print 'number of turns = ', str(turns)
+        print '系统结果: ', u', '.join([self.database.labels[ii] for ii in ranks[:5]]).encode("utf8")
+        print '目标影片排名 = ', ranks.index(self.goal['target']) + 1
+        if reward > 0: print '对话成功!'
+        else: print '对话失败'
+        print '对话轮次 = ', str(turns)
 
     ''' randomly sample a start state '''
     def _sample_action(self):
@@ -101,7 +103,10 @@ class CmdUser:
         self.state['prev_diaact'] = 'UNK'
 
         self.corrupt()
-        sent = self.prompt_input('Hi! I am Info-Bot. I can help you search for movies if you tell me their attributes!', 0).lower()
+        # 改到中文
+        #sent = self.prompt_input('Hi! I am Info-Bot. I can help you search for movies if you tell me their attributes!', 0).lower()
+        sent = self.prompt_input('你好，向我提问关于电影的东西吧！',0).lower()
+
         if sent=='quit': episode_over=True
         else: episode_over=False
         
@@ -143,8 +148,9 @@ class CmdUser:
                         break
 
     def print_goal(self):
+        # 改到中文
         print 'User target = ', ', '.join(['%s:%s' %(s,v) for s,v in \
-                zip(['movie']+self.database.slots, \
+                zip(['movie']+self.database.slots,
                 [self.database.labels[self.goal['target']]] + \
                 self.database.tuples[self.goal['target']])])
         print 'User information = ', ', '.join(['%s:%s' %(s,v) for s,v in \
