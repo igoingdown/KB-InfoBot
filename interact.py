@@ -77,7 +77,7 @@ sys.setrecursionlimit(10000)
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--agent', dest='agent', type=str, default='rl-soft', 
+parser.add_argument('--agent', dest='agent', type=str, default='e2e-soft',
         help='Agent to run -- (rule-no / rl-no / rule-hard / rl-hard / rule-soft / rl-soft / e2e-soft')
 
 args = parser.parse_args()
