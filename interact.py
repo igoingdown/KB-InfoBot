@@ -137,7 +137,7 @@ user_sim = CmdUser(movie_kb, act_set, slot_set, None, max_turn, err_prob, db_ful
 
 # load all agents
 print WELCOME.encode("utf8") if WELCOME is not None and type(WELCOME) == unicode else WELCOME
-# print u"载入模型中，请稍后……"
+print "载入模型中，请稍后……"
 agent_type = agent_map[params['agent']]
 for k,v in agent_params[agent_type].iteritems():
     params[k] = v
@@ -177,7 +177,7 @@ elif agent_type == 'e2e-rl-soft':
             pol_start=params['pol_start'], tr=params['tr'], ts=params['ts'], frac=params['frac'],
             max_req=params['max_req'], upd=params['upd'], name=params['model_name'])
 else:
-    print u"系统参数无效"
+    print "系统参数无效"
     sys.exit()
 
 uname = raw_input("请输入您的昵称: ").lower()
