@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 '''
 
 a rule-based user simulator
@@ -14,9 +17,11 @@ from deep_dialog import dialog_config
 from deep_dialog.tools import to_tokens
 from collections import defaultdict
 
-DOMAIN_NAME = 'movie'
-
-GENERIC = ['I dont know', 'I cannot remember', 'I am not sure']
+# 要改为中文
+# DOMAIN_NAME = 'movie'
+# GENERIC = ['I dont know', 'I cannot remember', 'I am not sure']
+DOMAIN_NAME = u'影片'
+GENERIC = [u'我不清楚', u'我不太记得了', u'我不确定']
 
 def weighted_choice(choices, weights):
     total = sum(weights)
@@ -26,7 +31,9 @@ def weighted_choice(choices, weights):
         if upto + w >= r:
             return c
         upto += w
-    assert False, "shouldnt get here"
+    # 改为中文
+    # assert False, "shouldnt get here"
+    assert False, "出问题啦"
 
 class CmdUser:
     def __init__(self, movie_dict=None, act_set=None, slot_set=None, 
@@ -305,8 +312,9 @@ class CmdUser:
 
 
 def main(params):
-    user_sim = RuleSimulator()
-    user_sim.init()
+    pass
+    # user_sim = RuleSimulator()
+    # user_sim.init()
 
 
 

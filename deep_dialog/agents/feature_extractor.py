@@ -32,13 +32,17 @@ class FeatureExtractor:
         self.embedding_vocab_t2n, self.embedding_vectors = torchwordemb.load_word2vec_text(self.embedding_path)
         self.embedding_size = self.embedding_vectors.size()[-1]
         save_path = db_path.rsplit('/',1)[0] + '/fdict_%d.p'%N
+        pure_grams_save_path = db_path.rsplit('/',1)[0] + '/fdict_%d.p'%2
+        print(save_path, pure_grams_save_path)
         if os.path.isfile(save_path):
             # load pre-dumped grams and N from file
+            print("dict exist")
             f = open(save_path, 'rb')
             self.grams = pkl.load(f)
             self.n = pkl.load(f)
             f.close()
         else:
+            print("build dicts")
             # if there doesn't exist any pre-dumped file, generate grams from corpus or database text file.
             self.grams = {}
             self.n = 0
