@@ -167,7 +167,7 @@ class FeatureExtractor:
                 embeddings.append(self.embedding_vectors[self.embedding_vocab_t2n[ngram]])
             else:
                 embeddings.append(UNK_EMBEDDING)
-        average_embedding = torch.cat([x.view(1, x.size()) for x in embeddings], 0).mean(0).squeeze()
+        average_embedding = torch.cat([x.view(1, x.size()[0]) for x in embeddings], 0).mean(0).squeeze()
         # return average_embedding.numpy().tolist()
 
         # tokens = to_tokens(text)
