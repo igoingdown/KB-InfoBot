@@ -26,7 +26,7 @@ def test_torch_load_word2vec(embedding_path):
 
 
 class FeatureExtractor:
-    def __init__(self, corpus_path, db_path, embedding_path='../data/embedding_model_t2s/vector_t2s', N=1):
+    def __init__(self, corpus_path, db_path, embedding_path='./data/embedding_model_t2s/vector_t2s', N=1):
         self.N = N
         self.embedding_path = embedding_path
         self.embedding_vocab_t2n, self.embedding_vectors = torchwordemb.load_word2vec_text(self.embedding_path)
