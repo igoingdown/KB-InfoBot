@@ -84,7 +84,7 @@ class CmdUser:
                                u' , '.join(vv for vv in v).encode("utf8"))
                     for k,v in self.state['inform_slots_noisy'].iteritems()])
 
-        inp = raw_input('你的输入: ').decode(sys.stdin.encoding or locale.getpreferredencoding(True))
+        inp = raw_input('你的输入: ').decode("utf8")
         if not self._vocab_search(inp): return random.choice(GENERIC)
         else: return inp
 
