@@ -58,11 +58,16 @@ class CmdUser:
         else: return pkl.load(open(path,'rb'))
 
     def _vocab_search(self, text):
+        '''
+        按照2-Gram的方式查看是否用户输入中是否存在关键字
+        :param text: 用户输入的自然语言句子
+        :return: 是否包含关键字，或者说用户输入的问题是否有意义
+        '''
         tokens = to_tokens(text)
         for i in range(len(tokens)):
             for t in range(self.N):
                 if i-t<0: continue
-                ngram = '_'.join(tokens[i-t:i+1])
+                ngram = u''.join(tokens[i-t:i+1])
                 if ngram in self.grams: 
                     return True
         return False
@@ -80,13 +85,14 @@ class CmdUser:
                     for k,v in self.state['inform_slots_noisy'].iteritems()])
 
         inp = raw_input('你的输入: ')
+        inp = inp.decode("utf8") if inp is not None and type(inp) == str else inp
         if not self._vocab_search(inp): return random.choice(GENERIC)
         else: return inp
 
     ''' display agent results at end of dialog '''
     def display_results(self, ranks, reward, turns):
         print ''
-        print '系统结果: ', u', '.join([self.database.labels[ii] for ii in ranks[:5]]).encode("utf8")
+        print '系统结果: ', u'， '.join([self.database.labels[ii] for ii in ranks[:5]]).encode("utf8")
         print '目标影片排名 = ', ranks.index(self.goal['target']) + 1
         if reward > 0: print '对话成功!'
         else: print '对话失败'
@@ -106,8 +112,8 @@ class CmdUser:
         # 改到中文
         #sent = self.prompt_input('Hi! I am Info-Bot. I can help you search for movies if you tell me their attributes!', 0).lower()
         sent = self.prompt_input('你好，向我提问关于电影的东西吧！',0).lower()
-
-        if sent=='quit': episode_over=True
+        sent = sent.decode("utf8")
+        if sent==u'quit': episode_over=True
         else: episode_over=False
         
         self.state['nl_sentence'] = sent
@@ -149,12 +155,14 @@ class CmdUser:
 
     def print_goal(self):
         # 改到中文
-        print 'User target = ', ', '.join(['%s:%s' %(s,v) for s,v in \
-                zip(['movie']+self.database.slots,
-                [self.database.labels[self.goal['target']]] + \
-                self.database.tuples[self.goal['target']])])
-        print 'User information = ', ', '.join(['%s:%s' %(s,v) for s,v in \
-                self.goal['inform_slots'].iteritems() if v is not None]), '\n'
+        print '用户目标 = ', ', '.join(['%s:%s' %(s.encode("utf8") if s is not None and type(s) == unicode else s,
+                                              v.encode("utf8") if v is not None and type(v) == unicode else v) \
+                                    for s,v in zip(['影片']+self.database.slots,
+                                                   [self.database.labels[self.goal['target']]] +
+                                                   self.database.tuples[self.goal['target']])])
+        print '用户输入信息 = ', ', '.join(['%s:%s' %(s.encode("utf8") if s is not None and type(s) == unicode else s,
+                                              v.encode("utf8") if v is not None and type(v) == unicode else v)
+                                                for s,v in self.goal['inform_slots'].iteritems() if v is not None]), '\n'
 
     ''' initialization '''
     def initialize_episode(self):
@@ -233,7 +241,9 @@ class CmdUser:
             except ValueError:
                 return False
 
-        tokens = nltk.word_tokenize(val)
+        # 中文不用nltk
+        # tokens = nltk.word_tokenize(val)
+        tokens = to_tokens(val)
         if len(tokens)>1: 
             tokens.pop(random.randrange(len(tokens)))
             out = set([' '.join(tokens)])

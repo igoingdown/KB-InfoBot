@@ -11,7 +11,9 @@ import random
 import copy
 import nltk
 
+
 from deep_dialog import dialog_config
+from deep_dialog.tools import to_tokens
 
 DOMAIN_NAME = u'影片'
 
@@ -271,8 +273,9 @@ class RuleSimulator:
                 return True
             except ValueError:
                 return False
-
-        tokens = nltk.word_tokenize(val)
+        # 中文不用NLTK
+        # tokens = nltk.word_tokenize(val)
+        tokens = to_tokens(val)
         if len(tokens)>1: tokens.pop(random.randrange(len(tokens)))
         out = []
         for t in tokens:
