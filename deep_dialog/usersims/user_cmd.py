@@ -12,7 +12,7 @@ import random
 import copy
 import nltk
 import cPickle as pkl
-
+import sys, locale
 from deep_dialog import dialog_config
 from deep_dialog.tools import to_tokens
 from collections import defaultdict
@@ -84,10 +84,14 @@ class CmdUser:
                                u' , '.join(vv for vv in v).encode("utf8"))
                     for k,v in self.state['inform_slots_noisy'].iteritems()])
 
-        inp = raw_input('你的输入: ')
-        print(inp, type(inp))
-        print(inp.decode("utf8"))
-        inp = inp.decode("utf8") if inp is not None and type(inp) == str else inp
+        inp = u'请搜索刘德华主演的影片'
+        for i in range(10):
+            try:
+                inp = raw_input('你的输入: ').decode(sys.stdin.encoding or locale.getpreferredencoding(True))
+                print(inp, type(inp))
+                inp = inp.encode("utf8")
+            except Exception as e:
+                print str(e)
         if not self._vocab_search(inp): return random.choice(GENERIC)
         else: return inp
 
