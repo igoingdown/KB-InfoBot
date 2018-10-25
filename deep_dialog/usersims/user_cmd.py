@@ -85,6 +85,8 @@ class CmdUser:
                     for k,v in self.state['inform_slots_noisy'].iteritems()])
 
         inp = raw_input('你的输入: ')
+        print(inp, type(inp))
+        print(inp.decode("utf8"))
         inp = inp.decode("utf8") if inp is not None and type(inp) == str else inp
         if not self._vocab_search(inp): return random.choice(GENERIC)
         else: return inp

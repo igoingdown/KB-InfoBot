@@ -159,7 +159,7 @@ class FeatureExtractor:
         embeddings = []
         UNK_EMBEDDING = self.embedding_vectors.mean(0).squeeze()
         BAK_EMBEDDING = torch.zeros(UNK_EMBEDDING.size())
-        # 转到中文之后，N-Gram不再必要了
+        # 转到中文之后，N-Gram不再必要了，全部使用Embedding即可
         for ngram in to_tokens(text):
             if ngram in self.grams:
                 vec[self.grams[ngram]] += 1.
@@ -168,6 +168,8 @@ class FeatureExtractor:
             else:
                 embeddings.append(UNK_EMBEDDING)
         average_embedding = torch.cat([x.view(1, x.size()) for x in embeddings], 0).mean(0).squeeze()
+        # return average_embedding.numpy().tolist()
+
         # tokens = to_tokens(text)
         # for i in range(len(tokens)):
         #     for t in range(self.N):
