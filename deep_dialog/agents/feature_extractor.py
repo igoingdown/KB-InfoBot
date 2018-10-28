@@ -168,7 +168,7 @@ class FeatureExtractor:
             else:
                 embeddings.append(UNK_EMBEDDING)
         average_embedding = torch.cat([x.view(1, x.size()[0]) for x in embeddings], 0).mean(0).squeeze()
-        return average_embedding.numpy().tolist()
+        return average_embedding.numpy()
 
         # tokens = to_tokens(text)
         # for i in range(len(tokens)):

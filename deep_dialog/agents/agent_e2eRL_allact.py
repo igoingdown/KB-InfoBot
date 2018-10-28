@@ -195,6 +195,8 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
 
         # TODO: 改为embedding之后，这段要全部改掉，主要是in_size这个变量要改，不知道会不会出一些其他的幺蛾子
         p_vector = self.feat_extractor.featurize(user_action['nl_sentence'])
+        p_vector = np.expand_dims(np.expand_dims(p_vector, axis=0), axis=0)
+        p_vector = standardize(p_vector)
 
         # p_vector = np.zeros((self.in_size,)).astype('float32')   # （|Grams|+|Slots|, )
         # p_vector[:self.feat_extractor.n] = self.feat_extractor.featurize(user_action['nl_sentence'])
