@@ -90,12 +90,11 @@ class CmdUser:
 
     ''' display agent results at end of dialog '''
     def display_results(self, ranks, reward, turns):
-        print ''
-        print '系统结果: ', u'， '.join([self.database.labels[ii] for ii in ranks[:5]]).encode("utf8")
-        print '目标影片排名 = ', ranks.index(self.goal['target']) + 1
+        print '\n系统结果: ', u'， '.join([self.database.labels[ii] for ii in ranks[:5]]).encode("utf8")
+        print '目标影片排名:{0}'.format(ranks.index(self.goal['target']) + 1)
         if reward > 0: print '对话成功!'
         else: print '对话失败'
-        print '对话轮次 = ', str(turns)
+        print '对话轮数:{0}'.format(turns)
 
     ''' randomly sample a start state '''
     def _sample_action(self):

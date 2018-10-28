@@ -68,7 +68,11 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         self.training = train
         self.feat_extractor = FeatureExtractor(corpus,self.database.path,N=N)
         out_size = len(dialog_config.inform_slots)+1
-        in_size = len(self.feat_extractor.grams) + len(dialog_config.inform_slots)
+
+        # TODO: 改到embedding之后，输入特征的长度也要改
+        # in_size = len(self.feat_extractor.grams) + len(dialog_config.inform_slots)
+        in_size = self.feat_extractor.embedding_size
+
         slot_sizes = [self.movie_dict.lengths[s] for s in dialog_config.inform_slots]
         self._init_model(in_size, out_size, slot_sizes, self.database,
                 n_hid=n_hid, learning_rate_sl=lr, batch_size=batch, ment=ment, input_type=input_type,
@@ -189,16 +193,18 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         '''
         self.state['turn'] += 1
 
-        # TODO: 改为embedding之后，这段要全部改掉
-        p_vector = np.zeros((self.in_size,)).astype('float32')   # （|Grams|+|Slots|, )
-        p_vector[:self.feat_extractor.n] = self.feat_extractor.featurize(user_action['nl_sentence'])
-        if self.state['turn']>1:
-            pr_act = self.state['prevact'].split('@')
-            assert pr_act[0]!='inform', 'Agent called after informing!'
-            act_id = dialog_config.inform_slots.index(pr_act[1])
-            p_vector[self.feat_extractor.n+act_id] = 1
-        p_vector = np.expand_dims(np.expand_dims(p_vector, axis=0), axis=0) # (1, 1, |Grams|+|Slots|)
-        p_vector = standardize(p_vector)
+        # TODO: 改为embedding之后，这段要全部改掉，主要是in_size这个变量要改，不知道会不会出一些其他的幺蛾子
+        p_vector = self.feat_extractor.featurize(user_action['nl_sentence'])
+
+        # p_vector = np.zeros((self.in_size,)).astype('float32')   # （|Grams|+|Slots|, )
+        # p_vector[:self.feat_extractor.n] = self.feat_extractor.featurize(user_action['nl_sentence'])
+        # if self.state['turn']>1:
+        #     pr_act = self.state['prevact'].split('@')
+        #     assert pr_act[0]!='inform', 'Agent called after informing!'
+        #     act_id = dialog_config.inform_slots.index(pr_act[1])
+        #     p_vector[self.feat_extractor.n+act_id] = 1
+        # p_vector = np.expand_dims(np.expand_dims(p_vector, axis=0), axis=0) # (1, 1, |Grams|+|Slots|)
+        # p_vector = standardize(p_vector)
 
         p_targets = []
         phi_targets = []

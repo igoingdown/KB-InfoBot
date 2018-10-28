@@ -168,7 +168,7 @@ class FeatureExtractor:
             else:
                 embeddings.append(UNK_EMBEDDING)
         average_embedding = torch.cat([x.view(1, x.size()[0]) for x in embeddings], 0).mean(0).squeeze()
-        # return average_embedding.numpy().tolist()
+        return average_embedding.numpy().tolist()
 
         # tokens = to_tokens(text)
         # for i in range(len(tokens)):
@@ -177,7 +177,7 @@ class FeatureExtractor:
         #         ngram = '_'.join(tokens[i-t:i+1])
         #         if ngram in self.grams:
         #             vec[self.grams[ngram]] += 1.
-        return vec
+        # return vec
 
 if __name__=='__main__':
     F = FeatureExtractor('../data/corpora/selected_medium_corpus.txt','../data/selected_medium/db.txt')
