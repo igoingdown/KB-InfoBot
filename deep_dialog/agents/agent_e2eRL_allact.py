@@ -33,7 +33,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
     def __init__(self, movie_dict=None, act_set=None, slot_set=None, db=None, corpus=None,
             train=True, _reload=False, n_hid=100, batch=128, ment=0., input_type='full', upd=10,
             sl='e2e', rl='e2e', pol_start=600, lr=0.005, N=1, tr=2.0, ts=0.5, max_req=2, frac=0.5, 
-            name=None):
+            name=None,seq_max_len=10):
         '''
         构造end2end的Agent
         :param movie_dict:
@@ -66,12 +66,13 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         self.database = db
         self.max_turn = dialog_config.MAX_TURN
         self.training = train
-        self.feat_extractor = FeatureExtractor(corpus,self.database.path,N=N)
+        self.seq_max_len = seq_max_len
+        self.feat_extractor = FeatureExtractor(corpus,self.database.path,N=N, seq_max_len=self.seq_max_len)
         out_size = len(dialog_config.inform_slots)+1
 
-        # TODO: 改到embedding之后，输入特征的长度也要改
+        # 改到embedding之后，输入特征的长度也要改
         # in_size = len(self.feat_extractor.grams) + len(dialog_config.inform_slots)
-        in_size = self.feat_extractor.embedding_size
+        in_size = self.feat_extractor.embedding_size * self.seq_max_len
 
         slot_sizes = [self.movie_dict.lengths[s] for s in dialog_config.inform_slots]
         self._init_model(in_size, out_size, slot_sizes, self.database,
@@ -194,6 +195,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         self.state['turn'] += 1
 
         # TODO: 改为embedding之后，这段要全部改掉，主要是in_size这个变量要改，不知道会不会出一些其他的幺蛾子
+        # TODO: 改为Embedding后效果很差，还是应该试试更多的模型
         p_vector = self.feat_extractor.featurize(user_action['nl_sentence'])
         p_vector = np.expand_dims(np.expand_dims(p_vector, axis=0), axis=0)
         p_vector = standardize(p_vector)

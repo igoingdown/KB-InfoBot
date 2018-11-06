@@ -42,6 +42,10 @@ parser.add_argument('--sub_prob', dest='sub_prob', default=0.05, type=float,
 parser.add_argument('--reload', dest='reload', type=int, default=0, 
         help='Reload previously saved model (0-no, 1-yes)')
 
+# 将特征改为二维特征，使用embedding矩阵
+parser.add_argument('--seq_max_len', dest='seq_max_len', type=int, default=10,
+        help='Embedding sequence max length')
+
 args = parser.parse_args()
 params = vars(args)
 
@@ -174,14 +178,14 @@ elif agent_type == 'e2e-rl-soft':
             input_type=params['input'], sl=params['sl'],
             rl=params['rl'], pol_start=params['pol_start'], lr=params['lr'], N=params['featN'],
             tr=params['tr'], ts=params['ts'], frac=params['frac'], max_req=params['max_req'],
-            upd=params['upd'], name=params['model_name'])
+            upd=params['upd'], name=params['model_name'], seq_max_len=params['seq_max_len'])
     agent_eval = AgentE2ERLAllAct(movie_kb, act_set, slot_set, db_inc, corpus_path, train=False,
             _reload=False,
             n_hid=params['nhid'], batch=params['batch'], ment=params['ment'],
             input_type=params['input'], sl=params['sl'],
             rl=params['rl'], pol_start=params['pol_start'], lr=params['lr'], N=params['featN'],
             tr=params['tr'], ts=params['ts'], frac=params['frac'], max_req=params['max_req'],
-            upd=params['upd'], name=params['model_name'])
+            upd=params['upd'], name=params['model_name'], seq_max_len=params['seq_max_len'])
 else:
     print "Invalid agent!"
     sys.exit()

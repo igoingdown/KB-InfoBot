@@ -91,6 +91,10 @@ params['err_prob'] = 0.5
 params['dontknow_prob'] = 0.5
 params['sub_prob'] = 0.05
 params['max_first_turn'] = 5
+
+# 将输入特征改为二维特征，使用embedding矩阵
+params['seq_max_len'] = 10
+
 config = importlib.import_module('settings.config_'+params['db'])
 agent_params = config.agent_params
 dataset_params = config.dataset_params

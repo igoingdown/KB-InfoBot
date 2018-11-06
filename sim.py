@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import argparse, json, shutil, io, time, importlib
 import numpy as np
 from deep_dialog.agents.agent_act_rule import AgentActRule
@@ -34,6 +37,10 @@ parser.add_argument('--max_first_turn', dest='max_first_turn', type=int, default
         help='Maximum number of slots informed by user in first turn')
 parser.add_argument('--model_name', dest='model_name', type=str, default='pretrained', 
         help='model name to evaluate (This should be the same as what you gave for training). Pass "pretrained" to use pretrained models.')
+
+# 将特征改为二维特征，使用embedding矩阵
+parser.add_argument('--seq_max_len', dest='seq_max_len', type=int, default=10,
+        help='Embedding sequence max length')
 
 args = parser.parse_args()
 params = vars(args)
