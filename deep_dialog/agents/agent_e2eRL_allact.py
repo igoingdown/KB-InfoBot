@@ -130,6 +130,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         '''
         self.episode_count += 1
         if self.training and self.episode_count%self.batch_size==0:
+            # 又进行了batch_size次对话，可以构造一个batch然后更新参数了
             self.num_updates += 1
             if self.num_updates>self.pol_start and self.num_updates%ANNEAL==0: self.anneal_lr()
             tst = time.time()
@@ -179,8 +180,12 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         self.state['actions'] = [] # 保存一个episode的每个turn agent选择的action
         self.state['rewards'] = [] # 保存一个episode的每个turn agent给出的action的reward
         self.state['indices'] = []  # 保存inform action之后的概率前几名，不是inform action，就是一个空的列表
-        self.state['ptargets'] = [] # 保存一个episode的每个turn手工计算的p
-        self.state['phitargets'] = [] # 保存一个episode的每个turn手工计算的q
+        self.state['ptargets'] = [] # 保存一个episode的每个turn的p
+        self.state['phitargets'] = [] # 保存一个episode的每个turn的q
+
+        # TODO: 在对话状态中添加用于记录每轮用户输入的embedding序列长度字段
+        self.state['seq_len'] = []
+
         self.state['hid_state'] = [np.zeros((1,self.r_hid)).astype('float32') \
                 for s in dialog_config.inform_slots] # 保存一个episode的每个turn开始时BF RNN的输入状态，每个slot都有一个
         self.state['pol_state'] = np.zeros((1,self.n_hid)).astype('float32') # 保存一个episode的每个turn开始时Pol网络RNN的输入状态
@@ -196,7 +201,7 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
 
         # TODO: 改为embedding之后，这段要全部改掉，主要是in_size这个变量要改，不知道会不会出一些其他的幺蛾子
         # TODO: 改为Embedding后效果很差，还是应该试试更多的模型
-        p_vector = self.feat_extractor.featurize(user_action['nl_sentence'])
+        p_vector, seq_len = self.feat_extractor.featurize(user_action['nl_sentence'])
         p_vector = np.expand_dims(np.expand_dims(p_vector, axis=0), axis=0)
         p_vector = standardize(p_vector)
 
@@ -237,11 +242,12 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
             if self.training: act, action, p_out, hid_out, db_probs = self._prob_act(p_vector, mode='sample')
             else: act, action, p_out, hid_out, db_probs = self._prob_act(p_vector, mode='max')
 
-        self._state_update(act, p_vector, action, user_action['reward'], p_out, hid_out, p_targets, phi_targets)
+        # TODO: 添加seq_len参数,注意在哪找到这个参数
+        self._state_update(act, p_vector, action, user_action['reward'], p_out, hid_out, p_targets, phi_targets, seq_len)
         act['posterior'] = db_probs
         return act
 
-    def _state_update(self, act, p, action, rew, p_out, h_out, p_t, phi_t):
+    def _state_update(self, act, p, action, rew, p_out, h_out, p_t, phi_t, seq_len):
         '''
         每轮对话结束后，将最新的对话状态填充到列表或者更新之前存储的上一次的状态
         :param act: dict，保存了action的细节
@@ -268,6 +274,10 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
         self.state['pol_state'] = p_out
         self.state['ptargets'].append(p_t)
         self.state['phitargets'].append(phi_t)
+
+        # TODO: 在对话状态中添加用于记录每轮用户输入的embedding序列长度字段
+        self.state['seq_len'].append(seq_len)
+
 
     def _prob_act(self, p, mode='sample'):
         '''
@@ -352,22 +362,29 @@ class AgentE2ERLAllAct(E2ERLAgent,SoftDB,BeliefTracker):
             db_switch = 1
 
         inp = np.zeros((self.max_turn,self.in_size)).astype('float32')
-        actmask = np.zeros((self.max_turn,self.out_size)).astype('int8')
-        turnmask = np.zeros((self.max_turn,)).astype('int8')
+        act_mask = np.zeros((self.max_turn,self.out_size)).astype('int8')
+        turn_mask = np.zeros((self.max_turn,)).astype('int8')
+        # TODO: 需要在对话状态中保存seq_mask！这里已经没有了seq的信息!，只要记录embedding序列的长度即可，然后在此处将长度转为矩阵
+        seq_mask = np.zeros((self.max_turn, self.seq_max_len)).astype('int8')
         p_targets = [np.zeros((self.max_turn,self.slot_sizes[i])).astype('float32') \
                 for i in range(len(dialog_config.inform_slots))]
         phi_targets = [np.zeros((self.max_turn,)).astype('float32') \
                 for i in range(len(dialog_config.inform_slots))]
         for t in xrange(0,self.state['turn']):
-            actmask[t,self.state['actions'][t]] = 1
+            act_mask[t,self.state['actions'][t]] = 1
             inp[t,:] = self.state['inputs'][t]
-            turnmask[t] = 1
+            turn_mask[t] = 1
+
+            # 将对话状态中记录的seq_len转为mask矩阵
+            for seq in xrange(0, self.state['seq_len'][t]):
+                seq_mask[t][seq] = 1
+
             if self.training and self.num_updates<self.pol_start:
                 for i in range(len(dialog_config.inform_slots)):
                     p_targets[i][t,:] = self.state['ptargets'][t][i]
                     phi_targets[i][t] = self.state['phitargets'][t][i]
 
-        self.add_to_pool(inp, turnmask, actmask, total_reward, db_index, db_switch, p_targets, phi_targets)
+        self.add_to_pool(inp, turn_mask, act_mask, total_reward, db_index, db_switch, p_targets, phi_targets, seq_mask)
         self.recent_rewards.append(total_reward)
         self.recent_turns.append(self.state['turn'])
         if self.state['turn'] == self.max_turn: self.recent_successes.append(0)

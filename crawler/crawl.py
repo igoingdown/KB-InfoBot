@@ -9,6 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
+
 class MovieRecord(object):
     def __init__(self):
         self.movie_name = ""

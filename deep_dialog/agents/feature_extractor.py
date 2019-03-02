@@ -17,7 +17,7 @@ from deep_dialog.tools import to_tokens
 
 def test_torch_load_word2vec(embedding_path):
     '''
-    测试torch在load word2vec模型时是不是好用，事实证明很好用，其实跟word2vec内嵌的API效果相同。
+    测试torch在load wordc2vec模型时是不是好用，事实证明很好用，其实跟word2vec内嵌的API效果相同。
     :param config: 配置项超参数
     :return: None
     '''
@@ -172,12 +172,13 @@ class FeatureExtractor:
                 embeddings.append(self.embedding_vectors[self.embedding_vocab_t2n[ngram]])
             else:
                 embeddings.append(self.UNK_EMBEDDING)
+        seq_size = len(embeddings)
         while len(embeddings) < self.seq_max_len:
             embeddings.append(self.BAK_EMBEDDING)
         embeddings = embeddings[:self.seq_max_len]
-        cat_embedding = torch.cat(embeddings).squeeze()
-        print(cat_embedding.size())
-        return cat_embedding
+        cat_embedding = torch.cat([x.view(1, x.size()[0]) for x in embeddings], 0)
+        # TODO: embedding直接改为二维列表,numpy的二维array
+        return cat_embedding.numpy(), seq_size
 
         # average_embedding = torch.cat([x.view(1, x.size()[0]) for x in embeddings], 0).mean(0).squeeze()
         # return average_embedding.numpy()

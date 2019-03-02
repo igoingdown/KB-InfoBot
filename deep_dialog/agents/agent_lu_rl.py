@@ -108,6 +108,8 @@ class E2ERLAgent:
         self.slot_sizes = slot_sizes
         self.batch_size = batch_size
         self.learning_rate = learning_rate_rl
+        self.embedding_size = 50
+        self.nlu_hidden_size = 100
         self.n_hid = n_hid
         self.r_hid = self.n_hid
         self.sl = sl
@@ -130,7 +132,20 @@ class E2ERLAgent:
         # print("unknown rows: {}".format(unknown))
         # print("-" * 100)
 
-        input_var, turn_mask, act_mask, reward_var = T.ftensor3('in'), T.bmatrix('tm'), T.btensor3('am'), T.fvector('r')
+        # TODO: 将input_var改为4维的，输入的时候仍然用3维
+        # TODO: 输入多出来一个seq_mask
+        # input_var, turn_mask, act_mask, reward_var = T.ftensor3('in'), T.bmatrix('tm'), T.btensor3('am'), T.fvector('r')
+        # input_var: (B, H, in_size)
+        # act_mask: (B, H, out_size)
+        # turn_mask: (B, H)
+        # H = max_turn
+        input_var, turn_mask, act_mask, reward_var, seq_mask = T.ftensor3('in'), T.bmatrix('tm'), T.btensor3('am'), T.fvector('r'), T.bmatrix('sm')
+        # input_var: (BH, seq_size, embedding_size)
+        # act_mask: (B, H, out_size)
+        # turn_mask: (B, H)
+        # seq_mask: (BH, seq_size)
+        # H = max_turn
+
         T_var, N_var = T.as_tensor_variable(table), T.as_tensor_variable(counts)
         db_index_var = T.imatrix('db')
         db_index_switch = T.bvector('s')
@@ -167,7 +182,7 @@ class E2ERLAgent:
 
         # belief tracking
         l_in = L.InputLayer(shape=(None,None,self.in_size), input_var=input_var)
-        # input_var: (B, H, GRAM_SIZE + INFORM_SLOTS + 1)
+        # input_var: (B, H, in_size), in_size = GRAM_SIZE + INFORM_SLOTS + 1
         p_vars = []
         pu_vars = []
         phi_vars = []
@@ -179,13 +194,26 @@ class E2ERLAgent:
         kl_loss = []
         x_loss = []
         self.trackers = []
+
+        # TODO: 增加一个RNN层，提取用户输入的特征
+        # TODO: 输入多出来一个全零的状态
+        nlu_hid_init = T.fmatrix('nlu_h') # (BH, hidden)
+        nlu_rnn = L.GRULayer(self.embedding_size, self.nlu_hidden_size, hid_init=nlu_hid_init,
+                           mask_input=seq_mask,
+                           grad_clipping=10.)
+        nlu_out = nlu_rnn.get_output_for([input_var,seq_mask])[:,-1,:]  # (BH, nlu_hidden)
+        # 对每个turn输出的NLU结果进行拼接，得到与之前类似的input_var
+        # TODO: 这里不需要将nlu的输出存储到对话状态里，因为每次都是从全0状态开始的！
+        nlu_out_shaped = T.reshape(nlu_out,
+                    (turn_mask.shape[0]*turn_mask.shape[1],-1))
+
         for i,s in enumerate(dialog_config.inform_slots):
             hid_state_init = T.fmatrix('h')
-            l_rnn = L.GRULayer(l_in, self.r_hid, hid_init=hid_state_init,
+            l_rnn = L.GRULayer(nlu_out_shaped, self.r_hid, hid_init=hid_state_init,
                     mask_input=l_mask_in,
                     grad_clipping=10.) # (B,H,D)
             # D = hidden size
-            # H表示history size, 是一个MAX_TUR维，所以需要一个turn mask！
+            # H表示history size, 是一个MAX_TURN维，所以需要一个turn mask！
             l_b_in = L.ReshapeLayer(l_rnn, 
                     (input_var.shape[0]*input_var.shape[1], self.r_hid)) # (BH,D)
 
@@ -337,9 +365,10 @@ class E2ERLAgent:
         self.reg_loss = -T.mean(ment*H_probs)
         self.loss = self.act_loss + self.db_loss + self.reg_loss
 
-        self.inps = [input_var, turn_mask, act_mask, reward_var, db_index_var, db_index_switch, pol_in] + hid_in_vars   # inputs
+        # TODO: 因为网络结构变化，所有theano function的输入都要更新，需要加入新增的输入变量
+        self.inps = [input_var, turn_mask, act_mask, reward_var, db_index_var, db_index_switch, pol_in, nlu_hid_init, seq_mask] + hid_in_vars   # inputs
         self.obj_fn = theano.function(self.inps, self.loss, on_unused_input='warn')
-        self.act_fn = theano.function([input_var,turn_mask,pol_in]+hid_in_vars, [out_probs,p_db,pol_out]+pu_vars+phi_vars+hid_out_vars, on_unused_input='warn')
+        self.act_fn = theano.function([input_var,turn_mask,pol_in,nlu_hid_init, seq_mask]+hid_in_vars, [out_probs,p_db,pol_out]+pu_vars+phi_vars+hid_out_vars, on_unused_input='warn')
         self.debug_fn = theano.function(self.inps, [probs, p_db, self.loss], on_unused_input='warn')
         self._rl_train_fn(self.learning_rate)
 
@@ -475,17 +504,21 @@ class E2ERLAgent:
         :return: None
         '''
         self.input_pool = deque([], pool)
-        self.actmask_pool = deque([], pool)
+        self.act_mask_pool = deque([], pool)
         self.reward_pool = deque([], pool)
         self.db_pool = deque([], pool)
-        self.dbswitch_pool = deque([], pool)
-        self.turnmask_pool = deque([], pool)
-        self.ptarget_pool = deque([], pool)
-        self.phitarget_pool = deque([], pool)
+        self.db_switch_pool = deque([], pool)
+        self.turn_mask_pool = deque([], pool)
+        self.p_target_pool = deque([], pool)
+        self.phi_target_pool = deque([], pool)
 
-    def add_to_pool(self, inp, turn, act, rew, db, dbs, ptargets, phitargets):
+        # TODO: 为了实现RNN提取语义特征，加入seq_mask用于处理变长的用户输入
+        self.seq_mask_pool = deque([], pool)
+
+    # TODO: 需要改调用该函数的caller，主要修改inp和seq_mask
+    def add_to_pool(self, inp, turn, act, rew, db, dbs, p_targets, phi_targets, seq_mask):
         '''
-
+        将一个episode产生的数据放入队列中，后面训练模型需要用到！
         :param inp: 一个episode的用户输入，N-Gram自然语言特征
         :param turn: 一个episode的轮次列表
         :param act: 一个episode中agent的action列表
@@ -497,13 +530,14 @@ class E2ERLAgent:
         :return: None，原地修改各个pool
         '''
         self.input_pool.append(inp)
-        self.actmask_pool.append(act)
+        self.act_mask_pool.append(act)
         self.reward_pool.append(rew)
         self.db_pool.append(db)
-        self.dbswitch_pool.append(dbs)
-        self.turnmask_pool.append(turn)
-        self.ptarget_pool.append(ptargets)
-        self.phitarget_pool.append(phitargets)
+        self.db_switch_pool.append(dbs)
+        self.turn_mask_pool.append(turn)
+        self.p_target_pool.append(p_targets)
+        self.phi_target_pool.append(phi_targets)
+        self.seq_mask_pool.append(seq_mask)
 
     def _get_minibatch(self, N):
         '''
@@ -516,14 +550,14 @@ class E2ERLAgent:
         n = min(N, len(self.input_pool))
         index = random.sample(range(len(self.input_pool)), n)
         i = [self.input_pool[ii] for ii in index]
-        a = [self.actmask_pool[ii] for ii in index]
+        a = [self.act_mask_pool[ii] for ii in index]
         r = [self.reward_pool[ii] for ii in index]
         d = [self.db_pool[ii] for ii in index]
-        ds = [self.dbswitch_pool[ii] for ii in index]
-        t = [self.turnmask_pool[ii] for ii in index]
-        p = [self.ptarget_pool[ii] for ii in index]
+        ds = [self.db_switch_pool[ii] for ii in index]
+        t = [self.turn_mask_pool[ii] for ii in index]
+        p = [self.p_target_pool[ii] for ii in index]
         pp = [np.asarray([row[ii] for row in p], dtype='float32') for ii in range(len(p[0]))]
-        ph = [self.phitarget_pool[ii] for ii in index]
+        ph = [self.phi_target_pool[ii] for ii in index]
         pph = [np.asarray([row[ii] for row in ph], dtype='float32') for ii in range(len(ph[0]))]
         return np.asarray(i, dtype='float32'), np.asarray(t, dtype='int8'), np.asarray(a, dtype='int8'), np.asarray(r, dtype='float32'), np.asarray(d, dtype='int32'), np.asarray(ds, dtype='int8'), pp, pph
 
@@ -532,7 +566,8 @@ class E2ERLAgent:
         训练模型，并更新参数
         :param verbose: 是否开启唠叨模式以便debug
         :param regime: 用SL的方式训练还是使用RL的方式训练
-        :return: loss，RL模式返回action(policy) loss， database sample(belief tracker) loss 和 正则化项loss， SL模式返回
+        :return: loss，RL模式返回action(policy) loss， database sample(belief tracker) loss 和 正则化项loss，
+            SL模式返回BT loss和p的KL散度以及q的交叉熵
         '''
         i, t, a, r, d, ds, p, ph = self._get_minibatch(self.batch_size)
         hi = [np.zeros((1,self.r_hid)).astype('float32') \

@@ -30,6 +30,10 @@ class DialogManager:
         self.movie_dict = movie_kb
 
     def initialize_episode(self):
+        '''
+        初始化一次对话。用户先产生行为，包括选定目标和选定最开始的action；然后初始化agent。
+        :return: 用户的action
+        '''
         while True:
             self.user_action = self.user.initialize_episode()
             if self._check_user_goal()<=dialog_config.SUCCESS_MAX_RANK: break

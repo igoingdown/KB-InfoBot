@@ -119,23 +119,23 @@ class RLAgent:
 
     def _init_experience_pool(self, pool):
         self.input_pool = deque([], pool)
-        self.actmask_pool = deque([], pool)
+        self.act_mask_pool = deque([], pool)
         self.reward_pool = deque([], pool)
-        self.turnmask_pool = deque([], pool)
+        self.turn_mask_pool = deque([], pool)
 
     def add_to_pool(self, inp, turn, act, rew):
         self.input_pool.append(inp)
-        self.actmask_pool.append(act)
+        self.act_mask_pool.append(act)
         self.reward_pool.append(rew)
-        self.turnmask_pool.append(turn)
+        self.turn_mask_pool.append(turn)
 
     def _get_minibatch(self, N):
         n = min(N, len(self.input_pool))
         index = random.sample(range(len(self.input_pool)), n)
         i = [self.input_pool[ii] for ii in index]
-        a = [self.actmask_pool[ii] for ii in index]
+        a = [self.act_mask_pool[ii] for ii in index]
         r = [self.reward_pool[ii] for ii in index]
-        t = [self.turnmask_pool[ii] for ii in index]
+        t = [self.turn_mask_pool[ii] for ii in index]
         return np.asarray(i, dtype='float32'), \
                 np.asarray(t, dtype='int32'), \
                 np.asarray(a, dtype='int32'), \
